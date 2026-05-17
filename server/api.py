@@ -254,3 +254,33 @@ def api_cve_fetch(body: dict = Body(...)):
     max_results = body.get("max_results", 50)
     cves = get_cve_updater().fetch_recent(days=days, max_results=max_results)
     return {"count": len(cves), "cves": cves[:20]}
+
+
+@router.get("/cve/scheduler/status")
+def api_cve_scheduler_status():
+    from core.cve_scheduler import get_cve_scheduler
+    return get_cve_scheduler().get_status()
+
+
+@router.post("/cve/scheduler/start")
+def api_cve_scheduler_start(body: dict = Body(default={})):
+    from core.cve_scheduler import get_cve_scheduler
+    interval = body.get("interval_hours", 24) if body else 24
+    scheduler = get_cve_scheduler()
+    scheduler.interval_hours = interval
+    started = scheduler.start()
+    return {"started": started, "interval_hours": interval}
+
+
+@router.post("/cve/scheduler/stop")
+def api_cve_scheduler_stop():
+    from core.cve_scheduler import get_cve_scheduler
+    get_cve_scheduler().stop()
+    return {"stopped": True}
+
+
+@router.post("/cve/scheduler/run")
+def api_cve_scheduler_run_now():
+    from core.cve_scheduler import get_cve_scheduler
+    result = get_cve_scheduler().run_once()
+    return result

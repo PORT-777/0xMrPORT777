@@ -6,11 +6,13 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [pendingDecision, setPendingDecision] = useState(null)
   const [status, setStatus] = useState('disconnected')
+  const [isTyping, setIsTyping] = useState(false)
   const listRef = useRef(null)
 
   useEffect(() => {
     setStatus('connecting')
     const ws = connectWebSocket((data) => {
+      setIsTyping(false)
       if (data.type === 'answer') {
         setMessages(prev => [...prev, { role: 'assistant', content: data.content }])
       } else if (data.type === 'command_pending') {
@@ -22,6 +24,7 @@ export default function ChatPage() {
           pending: true
         }])
       } else if (data.type === 'command_start') {
+        setIsTyping(true)
         setMessages(prev => [...prev, {
           role: 'system',
           content: `> ${data.command}`
@@ -37,6 +40,7 @@ export default function ChatPage() {
           return [...prev, { role: 'assistant', content: data.output }]
         })
       } else if (data.type === 'command_done') {
+        setIsTyping(false)
         setMessages(prev => [...prev, { role: 'system', content: `✓ ${data.command}` }])
       } else if (data.type === 'done') {
         setMessages(prev => [...prev, { role: 'assistant', content: `✅ **${data.content}**`, final: true }])
@@ -79,12 +83,21 @@ export default function ChatPage() {
     setPendingDecision(null)
   }
 
+  function clearChat() {
+    setMessages([])
+    setPendingDecision(null)
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <span>PORT-777 <span style={{ fontSize: 12, color: status === 'connected' ? '#4ade80' : '#f87171' }}>
-          ● {status}
-        </span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontWeight: 'bold', fontSize: 18, color: '#f44' }}>PORT-777</span>
+          <span style={{ fontSize: 12, color: status === 'connected' ? '#4ade80' : status === 'error' ? '#f87171' : '#facc15' }}>
+            ● {status}
+          </span>
+        </div>
+        <button onClick={clearChat} style={styles.clearBtn}>Clear</button>
       </div>
 
       <div ref={listRef} style={styles.messageList}>
@@ -109,10 +122,17 @@ export default function ChatPage() {
             )}
           </div>
         ))}
-        {messages.length === 0 && (
+        {isTyping && (
+          <div style={{ ...styles.message, ...styles.systemMsg }}>
+            <div style={styles.msgLabel}>PORT-777</div>
+            <div style={{ color: '#888' }}>⏳ Executing command...</div>
+          </div>
+        )}
+        {messages.length === 0 && !isTyping && (
           <div style={{ color: '#666', textAlign: 'center', marginTop: 60 }}>
             <div style={{ fontSize: 40 }}>💀</div>
-            <p>Type anything to start.<br/>Chat in English or Arabic.</p>
+            <p style={{ fontSize: 16 }}>Type anything to start.</p>
+            <p style={{ fontSize: 13, color: '#444' }}>Chat in English or Arabic.</p>
           </div>
         )}
       </div>
@@ -134,7 +154,7 @@ export default function ChatPage() {
 
 const styles = {
   container: { display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 800, margin: '0 auto', borderLeft: '1px solid #222', borderRight: '1px solid #222' },
-  header: { padding: '12px 16px', borderBottom: '1px solid #333', background: '#111', fontWeight: 'bold', fontSize: 18, color: '#f44' },
+  header: { padding: '12px 16px', borderBottom: '1px solid #333', background: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   messageList: { flex: 1, overflowY: 'auto', padding: 16, background: '#0d1117' },
   message: { marginBottom: 16, padding: '8px 12px', borderRadius: 8, background: '#161b22', color: '#e6edf3' },
   userMsg: { background: '#1e2a3a', borderLeft: '3px solid #58a6ff' },
@@ -146,4 +166,5 @@ const styles = {
   sendBtn: { padding: '10px 20px', borderRadius: 6, border: 'none', background: '#238636', color: '#fff', fontSize: 14, cursor: 'pointer' },
   yesBtn: { padding: '6px 16px', borderRadius: 4, border: 'none', background: '#238636', color: '#fff', cursor: 'pointer' },
   noBtn: { padding: '6px 16px', borderRadius: 4, border: 'none', background: '#da3633', color: '#fff', cursor: 'pointer' },
+  clearBtn: { padding: '4px 12px', borderRadius: 4, border: '1px solid #333', background: 'transparent', color: '#888', fontSize: 12, cursor: 'pointer' },
 }

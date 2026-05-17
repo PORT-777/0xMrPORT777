@@ -53,7 +53,7 @@ def slash_command(cmd, args, assistant=None):
         help_table.add_row("/session switch <id>", "switch active session")
         help_table.add_row("/session close <id>", "close session")
         help_table.add_row("/plugins [category]", "list available plugins")
-        help_table.add_row("/cve [fetch|stats]", "CVE auto-update from NVD")
+        help_table.add_row("/cve [fetch|stats|schedule]", "CVE auto-update from NVD")
         help_table.add_row("/findings", "show findings database")
         help_table.add_row("/reports", "list reports")
         help_table.add_row("/workflows", "show available workflows")
@@ -274,6 +274,33 @@ def slash_command(cmd, args, assistant=None):
             console.print(f"[bold]CVE Cache:[/bold] {stats['total']} entries")
             console.print(f"[bold]Last updated:[/bold] {stats['last_updated']}")
             console.print(f"[bold]By severity:[/bold] {stats['by_severity']}")
+        elif action == "schedule":
+            from core.cve_scheduler import get_cve_scheduler
+            scheduler = get_cve_scheduler()
+            sub = args[1].lower() if len(args) > 1 else "status"
+            if sub == "start":
+                interval = int(args[2]) if len(args) > 2 else 24
+                scheduler.interval_hours = interval
+                ok = scheduler.start()
+                console.print(f"[green]CVE scheduler started (every {interval}h)[/green]" if ok else "[yellow]Already running[/yellow]")
+            elif sub == "stop":
+                scheduler.stop()
+                console.print("[yellow]CVE scheduler stopped[/yellow]")
+            elif sub == "run":
+                result = scheduler.run_once()
+                if result.get("success"):
+                    console.print(f"[green]Fetched {result['count']} CVEs[/green]")
+                else:
+                    console.print(f"[red]Error: {result.get('error')}[/red]")
+            else:
+                status = scheduler.get_status()
+                console.print(f"[bold]CVE Scheduler Status:[/bold]")
+                console.print(f"  Running: {'Yes' if status['running'] else 'No'}")
+                console.print(f"  Interval: {status['interval_hours']}h")
+                console.print(f"  Last run: {status['last_run'] or 'never'}")
+                console.print(f"  Runs: {status['run_count']}")
+                if status['recent_errors']:
+                    console.print(f"  Errors: {len(status['recent_errors'])}")
         return True
 
     if cmd == "reset" and assistant:

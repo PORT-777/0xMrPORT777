@@ -97,3 +97,29 @@ export function sendDecision(decision) {
 export function disconnectWebSocket() {
   if (ws) { ws.close(); ws = null }
 }
+
+export function getCVEStats() { return get('/api/cve/stats') }
+
+export function fetchCVEs(days = 30, maxResults = 50) {
+  return post('/api/cve/fetch', { days, max_results: maxResults })
+}
+
+export function getCVESchedulerStatus() { return get('/api/cve/scheduler/status') }
+
+export function startCVEScheduler(intervalHours = 24) {
+  return post('/api/cve/scheduler/start', { interval_hours: intervalHours })
+}
+
+export function stopCVEScheduler() { return post('/api/cve/scheduler/stop', {}) }
+
+export function runCVESchedulerNow() { return post('/api/cve/scheduler/run', {}) }
+
+export function getPlugins(category = '') {
+  let q = '/api/plugins'
+  if (category) q += '?category=' + encodeURIComponent(category)
+  return get(q)
+}
+
+export function runPlugin(name, target, kwargs = {}) {
+  return post(`/api/plugins/${name}/run`, { target, kwargs })
+}

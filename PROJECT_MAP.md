@@ -27,19 +27,42 @@ APP/
 │   ├── exploit_engine.py   # CVE matching + Metasploit suggestions
 │   ├── target_graph.py     # Network topology graph builder
 │   ├── plugin_manager.py   # **Plugin system (scanners/exploits)**
-│   └── cve_updater.py      # **CVE auto-update from NVD API**
+│   ├── cve_updater.py      # **CVE auto-update from NVD API**
+│   └── cve_scheduler.py    # **CVE scheduler (24h auto-fetch)**
 ├── server/                 # Web UI backend
 │   ├── main.py             # FastAPI app (uvicorn)
-│   ├── api.py              # REST endpoints
+│   ├── api.py              # REST endpoints (33 routes)
 │   ├── ws.py               # WebSocket handler (live chat)
 │   ├── models.py           # Pydantic schemas
 │   ├── bridge.py           # KaliAssistant wrapper
 │   ├── ui/                 # React SPA source (Vite)
+│   │   ├── src/
+│   │   │   ├── App.jsx             # Main app with 7 tabs
+│   │   │   ├── DashboardPage.jsx   # **Overview dashboard**
+│   │   │   ├── ChatPage.jsx        # **Enhanced chat**
+│   │   │   ├── CVEPage.jsx         # **CVE viewer + scheduler**
+│   │   │   ├── PluginsPage.jsx     # **Plugin browser + runner**
+│   │   │   ├── SessionsPage.jsx    # Session history
+│   │   │   ├── FindingsPage.jsx    # Findings tables
+│   │   │   ├── GraphPage.jsx       # Network graph
+│   │   │   └── api.js              # API client
+│   │   └── vite.config.js
 │   └── static/             # Built frontend
 ├── plugins/                # **Community plugins**
 │   ├── scanners/           # Scanner plugins (nmap_enhanced, etc.)
 │   ├── exploits/           # Exploit plugins (msf_exploit, etc.)
 │   └── post_exploit/       # Post-exploitation plugins
+├── tests/                  # **Unit/Integration tests (118 tests)**
+│   ├── conftest.py
+│   ├── test_safety.py
+│   ├── test_exploit_engine.py
+│   ├── test_context_compressor.py
+│   ├── test_output_parser.py
+│   ├── test_knowledge_base.py
+│   ├── test_brain.py
+│   ├── test_memory_store.py
+│   ├── test_workflow_engine.py
+│   └── test_cve_scheduler.py
 ├── templates/              # Report templates
 │   └── report.html         # HTML report template
 ├── Dockerfile              # **Docker container**
@@ -57,6 +80,7 @@ APP/
 ├── brain_state.json        # Live brain state
 ├── .env / .env.example
 ├── requirements.txt
+├── requirements-dev.txt    # **Test dependencies**
 └── PROJECT_MAP.md
 ```
 
@@ -134,6 +158,8 @@ python port777.py --serve    → Start Web UI server (port 7777)
   /brain                    → View current session brain state
   /model <provider> [model] → Switch AI provider (openrouter/ollama)
   /models                   → List available Ollama models
+  /plugins [category]       → List available plugins
+  /cve [fetch|stats|schedule] → CVE auto-update + scheduler
   /about                    → Developer info & links
   /reset                    → Start fresh session
   /exit                     → Exit
@@ -176,6 +202,39 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Cached in `cve_cache.json`
 - `/api/cve/stats` and `/api/cve/fetch` REST endpoints
 
+### CVE Scheduler (v5.2)
+- `core/cve_scheduler.py` — automatic CVE updates every 24 hours (configurable)
+- Background daemon thread, non-blocking
+- `/cve schedule start [hours]` — start auto-fetch
+- `/cve schedule stop` — stop scheduler
+- `/cve schedule run` — manual trigger
+- `/cve schedule status` — view scheduler state
+- REST: `/api/cve/scheduler/status|start|stop|run`
+- Error tracking with recent error history
+
+### Unit/Integration Tests (v5.2)
+- `tests/` directory with pytest suite
+- 118 tests across 8 modules:
+  - `test_safety.py` — SafetyShield command validation
+  - `test_exploit_engine.py` — CVE matching, Metasploit suggestions
+  - `test_context_compressor.py` — Output compression, structured extraction
+  - `test_output_parser.py` — nmap, hydra, gobuster parsing
+  - `test_knowledge_base.py` — Tool knowledge, search, categories
+  - `test_brain.py` — SessionBrain state machine, phase transitions
+  - `test_memory_store.py` — Long-term memory, keyword matching
+  - `test_workflow_engine.py` — Workflow definitions, phase prompts
+  - `test_cve_scheduler.py` — Scheduler lifecycle, run_once
+- `requirements-dev.txt` — pytest, pytest-asyncio, pytest-cov, apscheduler
+- Run: `python -m pytest tests/ -v`
+
+### UI Enhancements (v5.2)
+- **Dashboard Page** (`DashboardPage.jsx`) — overview with stat cards, severity bar chart, session info, target table
+- **CVE Page** (`CVEPage.jsx`) — CVE database viewer, fetch from NVD, scheduler controls (start/stop/run/interval)
+- **Plugins Page** (`PluginsPage.jsx`) — plugin browser, category filter, run plugins with target input, result viewer
+- **Chat Improvements** — typing indicator, clear chat button, better status colors, improved empty state
+- **New Nav Tabs** — Dashboard (default), CVEs, Plugins (7 tabs total)
+- **API Extensions** — 4 new CVE scheduler endpoints, plugin run endpoint
+
 ### Long-Term Memory (RAG)
 - `memory_store.json` stores sessions, findings, targets, credentials
 - Before each AI chat, relevant past sessions are queried via keyword matching
@@ -192,4 +251,6 @@ python port777.py --serve    → Start Web UI server (port 7777)
 ## Pending / Future
 - Telegram Bot
 - Multi-target parallel sessions
-- Plugin system for community scanners
+- Advanced PDF report styling
+- CVE auto-update scheduling persistence (save interval to config)
+- Integration tests for full API + WebSocket flow
