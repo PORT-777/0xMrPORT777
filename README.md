@@ -1,6 +1,11 @@
-# PORT-777 v5 🎯
+# PORT-777 v5.3 🎯
 
 **Kali Linux Superhuman AI — Penetration Testing Assistant**
+
+[![CI/CD](https://github.com/PORT-777/0xMrPORT777/actions/workflows/ci.yml/badge.svg)](https://github.com/PORT-777/0xMrPORT777/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-169%20passed-brightgreen)](https://github.com/PORT-777/0xMrPORT777)
+[![CVEs](https://img.shields.io/badge/cves-118-orange)](https://github.com/PORT-777/0xMrPORT777)
+[![Modules](https://img.shields.io/badge/metasploit-65%2B-blue)](https://github.com/PORT-777/0xMrPORT777)
 
 > By **0xMr.PORT 777** | [Telegram](https://t.me/PB_9B) | [WhatsApp](https://wa.me/+201026778601) | [Instagram](https://www.instagram.com/i_c.n)
 
@@ -91,6 +96,45 @@ docker compose up -d
 - `/plugins` command to list, `/api/plugins` REST endpoint
 - Community can add custom scanners/exploits as Python files
 
+### 🎯 Post-Exploitation Automation
+- **26 modules** across 4 categories: privesc, persistence, lateral movement, data exfiltration
+- LinPEAS, sudo check, SSH persistence, PsExec, hash dump, and more
+- AI-aware — modules feed into system prompt for smart suggestions
+
+### 💣 Smart Payload Generator
+- **12 shell types**: bash, python, perl, php, ruby, nc, ncat, powershell, java, nodejs, golang, lua
+- **4 encoding methods**: base64, base64_url, hex, URL encoding
+- **Meterpreter**: msfvenom commands for elf, exe, py, php, aspx, war, jar
+- Obfuscation support for evasion
+
+### 📋 Compliance Mapping
+- **OWASP Top 10 2021** — all 10 categories
+- **MITRE ATT&CK** — 15 techniques across multiple tactics
+- **NIST CSF** — 8 categories
+- **PTES** — all 7 penetration testing phases
+- Auto-mapped in reports and AI context
+
+### ⏱️ Attack Timeline
+- Automatic phase detection from commands
+- **10 phases**: recon → scanning → enumeration → vuln analysis → exploitation → post-exploit → lateral → exfil → persistence → reporting
+- Visual timeline in executive reports
+
+### 🌐 Network Discovery
+- Automated subnet scanning and adjacent network discovery
+- **15 discovery commands**: ARP, ping sweep, port scans, SMB, SNMP, MSSQL, RDP, SSH, DNS, subdomain enum
+- Smart discovery plans (basic or full depth)
+
+### 📝 Smart Wordlist Generator
+- Context-aware wordlists from target info (company name, domain, year)
+- Username generation from personal info
+- Mutation engine: leet speak, symbols, suffixes
+- 35+ common passwords, 27 common usernames built-in
+
+### 🤝 Collaborative Sessions
+- Shared findings across parallel sessions
+- Persistent state for targets, credentials, vulnerabilities
+- User tracking per session
+
 ### 🔄 CVE Auto-Update
 - Fetches latest CVEs from NVD API
 - `/cve fetch` to download, `/cve stats` to view cache
@@ -123,6 +167,8 @@ git clone https://github.com/PORT-777/0xMrPORT777.git
 cd 0xMrPORT777
 chmod +x install.sh && ./install.sh
 ```
+
+> 💡 **Auto-Update**: The installer checks for updates on every run and pulls the latest version automatically.
 
 ### 2. Setup API Key
 
@@ -190,6 +236,10 @@ python port777.py --serve
 /models                    → List available Ollama models
 /plugins [category]        → List available plugins
 /cve [fetch|stats]         → CVE auto-update from NVD
+/post-exploit [category]   → Post-exploitation modules
+/payload <type> <lhost>    → Generate reverse shell payload
+/wordlist [target]         → Generate smart wordlist
+/network-discover <ip>     → Network discovery plan
 /about                     → Developer info
 /reset                     → Start fresh session
 /exit                      → Exit
@@ -209,14 +259,14 @@ PORT-777/
 ├── README.md
 ├── PROJECT_MAP.md
 │
-├── core/                   # Core engine (17 modules)
+├── core/                   # Core engine (23 modules)
 │   ├── assistant.py        # Conversational AI agent
 │   ├── brain.py            # Session state machine
 │   ├── auto_planner.py     # 3-step-ahead planning
 │   ├── executor.py         # Command execution + auto-heal
 │   ├── exploit_engine.py   # 118 CVE database + matching
 │   ├── target_graph.py     # Network topology builder
-│   ├── session_router.py   # Multi-session manager
+│   ├── session_router.py   # Multi-session manager + collaboration
 │   ├── memory_store.py     # Long-term memory (RAG)
 │   ├── reporter.py         # Multi-format report generator
 │   ├── safety.py           # Safety shield
@@ -228,7 +278,14 @@ PORT-777/
 │   ├── session_manager.py  # Session save/load
 │   ├── memory.py           # Session context
 │   ├── plugin_manager.py   # Plugin system
-│   └── cve_updater.py      # CVE auto-update from NVD
+│   ├── cve_updater.py      # CVE auto-update from NVD
+│   ├── cve_scheduler.py    # CVE scheduler (persistent)
+│   ├── post_exploit.py     # Post-exploitation automation
+│   ├── payload_generator.py # Smart payload generator
+│   ├── compliance_mapper.py # Compliance framework mapping
+│   ├── attack_timeline.py  # Attack timeline builder
+│   ├── network_discovery.py # Network discovery automation
+│   └── wordlist_generator.py # Smart wordlist generator
 │
 ├── plugins/                # Community plugins
 │   ├── scanners/           # nmap_enhanced, etc.
@@ -315,6 +372,25 @@ OPENROUTER_API_KEY=your_key_here
 | `/api/plugins/{name}/run` | POST | Run a plugin |
 | `/api/cve/stats` | GET | CVE cache statistics |
 | `/api/cve/fetch` | POST | Fetch CVEs from NVD |
+| `/api/cve/scheduler/status` | GET | Scheduler status |
+| `/api/cve/scheduler/start` | POST | Start scheduler |
+| `/api/cve/scheduler/stop` | POST | Stop scheduler |
+| `/api/cve/scheduler/run` | POST | Run scheduler now |
+| `/api/post-exploit/suggest` | GET | Post-exploit module suggestions |
+| `/api/post-exploit/stats` | GET | Post-exploit statistics |
+| `/api/payload/generate` | POST | Generate reverse shell payload |
+| `/api/payload/generate-all` | POST | Generate all payload types |
+| `/api/payload/meterpreter` | POST | Generate Meterpreter payload |
+| `/api/compliance/map` | POST | Map finding to frameworks |
+| `/api/compliance/report` | GET | Full compliance report |
+| `/api/timeline` | GET | Attack timeline |
+| `/api/network-discovery/plan` | POST | Generate discovery plan |
+| `/api/network-discovery/parse` | POST | Parse discovery output |
+| `/api/wordlist/generate` | POST | Generate smart wordlist |
+| `/api/wordlist/usernames` | POST | Generate username list |
+| `/api/sessions/{id}/share` | POST | Share finding across sessions |
+| `/api/sessions/shared` | GET | Get shared findings |
+| `/api/sessions/{id}/user` | POST | Set session user |
 | `/ws/chat` | WebSocket | Live chat streaming |
 
 Full Swagger docs: `http://localhost:7777/docs`
@@ -341,6 +417,13 @@ uvicorn[standard]>=0.34.0
 pydantic>=2.10.0
 websockets>=14.0
 weasyprint>=62.0
+```
+
+### Test Dependencies
+```
+pytest>=7.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
 ```
 
 ### Optional: Ollama (Local AI)

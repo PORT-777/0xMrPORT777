@@ -21,6 +21,12 @@ from core.auto_planner import AutoPlanner
 from core.context_compressor import ContextCompressor
 from core.exploit_engine import ExploitEngine
 from core.memory_store import get_memory
+from core.post_exploit import PostExploitEngine
+from core.payload_generator import PayloadGenerator
+from core.compliance_mapper import ComplianceMapper
+from core.attack_timeline import AttackTimeline
+from core.network_discovery import NetworkDiscovery
+from core.wordlist_generator import WordlistGenerator
 
 log = get_logger("assistant")
 
@@ -48,6 +54,12 @@ class KaliAssistant:
         self.exploit_engine = ExploitEngine()
         self.compressor = ContextCompressor()
         self.memory = SessionMemory()
+        self.post_exploit = PostExploitEngine()
+        self.payload_gen = PayloadGenerator()
+        self.compliance = ComplianceMapper()
+        self.timeline = AttackTimeline()
+        self.network_disc = NetworkDiscovery()
+        self.wordlist_gen = WordlistGenerator()
         self.max_iterations = get_config("app", "max_iterations") or 35
         self.session_id = self.session_mgr.generate_id()
         self.conversation_history = []
@@ -159,6 +171,7 @@ class KaliAssistant:
 
         self.brain.update_after_command(command, output)
         self.memory.add_message("command", command)
+        self.timeline.add_event(command, output or "", command.split()[0] if command else "")
 
         is_failure = not output or "error" in output.lower() or "timed out" in output.lower()
         self.consecutive_failures = (self.consecutive_failures + 1) if is_failure else 0
@@ -225,11 +238,15 @@ class KaliAssistant:
         planner_suggestions = self.planner.format_suggestions_for_prompt() if self.context_loaded else ""
         exploit_suggestions = self.exploit_engine.format_for_prompt(self.brain.state) if self.context_loaded else ""
         long_term_memory = get_memory().format_for_prompt(self.brain.state.get("objective", "")) if self.context_loaded else ""
+        post_exploit_ctx = self.post_exploit.format_for_prompt("linux") if self.context_loaded else ""
+        payload_ctx = self.payload_gen.format_for_prompt("0.0.0.0", 4444) if self.context_loaded else ""
+        compliance_ctx = self.compliance.format_for_prompt(self.all_commands) if self.context_loaded else ""
+        timeline_ctx = self.timeline.format_for_prompt() if self.context_loaded else ""
         fail_note = (
             f"\nNote: {self.consecutive_failures} consecutive failures. Try a different approach.\n"
             if self.consecutive_failures > 1 else ""
         )
-        extra = [t for t in [tools, brain_state, planner_suggestions, exploit_suggestions, long_term_memory, fail_note] if t.strip()]
+        extra = [t for t in [tools, brain_state, planner_suggestions, exploit_suggestions, long_term_memory, post_exploit_ctx, payload_ctx, compliance_ctx, timeline_ctx, fail_note] if t.strip()]
         extra_block = "\n\n".join(extra)
         return f"{base}\n\n{extra_block}" if extra_block else base
 

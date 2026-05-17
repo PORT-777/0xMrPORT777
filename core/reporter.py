@@ -26,12 +26,19 @@ class ReportGenerator:
         credentials = extra_data.get("credentials", []) if extra_data else []
         targets = extra_data.get("targets", []) if extra_data else []
 
+        from core.compliance_mapper import ComplianceMapper
+        from core.attack_timeline import AttackTimeline
+        compliance = ComplianceMapper().get_report_section(commands)
+        attack_timeline = AttackTimeline()
+        attack_timeline.add_events_from_commands(commands)
+
         context = {
             "timestamp": timestamp, "objective": objective, "summary": summary,
             "findings": findings, "timeline": timeline, "ports": ports,
             "vulnerabilities": vulnerabilities, "credentials": credentials,
             "targets": targets, "commands": commands,
-            "session_id": session_id, "filename_base": filename_base
+            "session_id": session_id, "filename_base": filename_base,
+            "compliance": compliance, "attack_timeline": attack_timeline
         }
 
         for fmt in self.formats:

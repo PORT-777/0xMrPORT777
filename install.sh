@@ -17,7 +17,7 @@ echo "  ██████╔╝██║   ██║██████╔╝   
 echo "  ██╔═══╝ ██║   ██║██╔══██╗   ██║          ██╔╝    ██╔╝    ██╔╝"
 echo "  ██║     ╚██████╔╝██║  ██║   ██║          ██║     ██║     ██║"
 echo "  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝          ╚═╝     ╚═╝     ╚═╝"
-echo -e "  PORT-777 v5.2 — Installer${NC}"
+echo -e "  PORT-777 v5.3 — Installer${NC}"
 echo ""
 
 # Check OS
@@ -30,10 +30,26 @@ if [[ "$OSTYPE" != "linux-gnu"* ]]; then
     fi
 fi
 
+# Auto-update check
+if [ -d ".git" ]; then
+    echo -e "${YELLOW}🔄 Checking for updates...${NC}"
+    git stash --quiet 2>/dev/null || true
+    git fetch --quiet origin main 2>/dev/null || true
+    LOCAL=$(git rev-parse HEAD 2>/dev/null)
+    REMOTE=$(git rev-parse origin/main 2>/dev/null)
+    if [ "$LOCAL" != "$REMOTE" ]; then
+        echo -e "${YELLOW}📥 New version available. Updating...${NC}"
+        git pull origin main --quiet
+        echo -e "${GREEN}✅ Updated to latest version.${NC}"
+    else
+        echo -e "${GREEN}✅ Already up to date.${NC}"
+    fi
+fi
+
 # Check Python
 if ! command -v python3 &> /dev/null; then
     echo -e "${RED}❌ Python3 not found. Installing...${NC}"
-    sudo apt update && sudo apt install -y python3 python3-pip
+    sudo apt update && sudo apt install -y python3 python3-pip python3-venv
 fi
 
 # Check Pip
@@ -42,10 +58,22 @@ if ! command -v pip3 &> /dev/null; then
     sudo apt install -y python3-pip
 fi
 
-# Install System Dependencies
+# Install System Dependencies (idempotent)
 echo -e "${YELLOW}📦 Installing system dependencies...${NC}"
-sudo apt update
-sudo apt install -y nmap git curl wget libxml2-dev libxslt1-dev libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev libffi-dev shared-mime-info
+sudo apt update -qq
+
+# Package list — split to handle failures gracefully
+CORE_PACKAGES="nmap git curl wget libxml2-dev libxslt1-dev libcairo2-dev libpango1.0-dev libffi-dev shared-mime-info"
+PDF_PACKAGES="libgdk-pixbuf-2.0-dev libgdk-pixbuf2.0-0"
+
+echo -e "${YELLOW}  → Core packages...${NC}"
+sudo apt install -y $CORE_PACKAGES 2>/dev/null || true
+
+echo -e "${YELLOW}  → PDF rendering packages...${NC}"
+sudo apt install -y $PDF_PACKAGES 2>/dev/null || {
+    echo -e "${YELLOW}  ⚠️  PDF packages not available, trying alternatives...${NC}"
+    sudo apt install -y libgdk-pixbuf2.0-0 2>/dev/null || true
+}
 
 # Install Python Dependencies
 echo -e "${YELLOW}🐍 Installing Python dependencies...${NC}"
@@ -68,8 +96,8 @@ fi
 if [ -d "server/ui" ] && command -v npm &> /dev/null; then
     echo -e "${YELLOW}🌐 Building Web UI...${NC}"
     cd server/ui
-    npm install
-    npm run build
+    npm install --quiet
+    npm run build --quiet
     cd ../..
     echo -e "${GREEN}✅ Web UI built.${NC}"
 elif [ ! -d "server/ui" ]; then

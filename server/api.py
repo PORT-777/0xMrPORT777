@@ -284,3 +284,148 @@ def api_cve_scheduler_run_now():
     from core.cve_scheduler import get_cve_scheduler
     result = get_cve_scheduler().run_once()
     return result
+
+
+@router.get("/post-exploit/suggest")
+def api_post_exploit_suggest(os_type: str = Query("linux"), category: str = Query("")):
+    from core.post_exploit import PostExploitEngine
+    engine = PostExploitEngine()
+    cat = category if category else None
+    return engine.suggest(os_type, cat)
+
+
+@router.get("/post-exploit/stats")
+def api_post_exploit_stats():
+    from core.post_exploit import PostExploitEngine
+    return PostExploitEngine().get_stats()
+
+
+@router.post("/payload/generate")
+def api_payload_generate(body: dict = Body(...)):
+    from core.payload_generator import PayloadGenerator
+    gen = PayloadGenerator()
+    lhost = body.get("lhost", "10.0.0.1")
+    lport = body.get("lport", 4444)
+    shell_type = body.get("shell_type", "bash")
+    encoding = body.get("encoding")
+    obfuscate = body.get("obfuscate", False)
+    return gen.generate(lhost, lport, shell_type, encoding, obfuscate)
+
+
+@router.post("/payload/generate-all")
+def api_payload_generate_all(body: dict = Body(...)):
+    from core.payload_generator import PayloadGenerator
+    gen = PayloadGenerator()
+    lhost = body.get("lhost", "10.0.0.1")
+    lport = body.get("lport", 4444)
+    return gen.generate_all(lhost, lport)
+
+
+@router.post("/payload/meterpreter")
+def api_payload_meterpreter(body: dict = Body(...)):
+    from core.payload_generator import PayloadGenerator
+    gen = PayloadGenerator()
+    lhost = body.get("lhost", "10.0.0.1")
+    lport = body.get("lport", 4444)
+    fmt = body.get("format", "elf")
+    return gen.generate_meterpreter(lhost, lport, fmt)
+
+
+@router.post("/compliance/map")
+def api_compliance_map(body: dict = Body(...)):
+    from core.compliance_mapper import ComplianceMapper
+    mapper = ComplianceMapper()
+    text = body.get("text", "")
+    return mapper.map_finding(text)
+
+
+@router.get("/compliance/report")
+def api_compliance_report():
+    from core.compliance_mapper import ComplianceMapper
+    from core.session_manager import SessionManager
+    sm = SessionManager()
+    sessions = sm.list_sessions()[:5]
+    mapper = ComplianceMapper()
+    all_results = []
+    for s in sessions:
+        data = sm.load(s["id"])
+        if data and data.get("commands"):
+            section = mapper.get_report_section(data["commands"])
+            all_results.append({"session": s["id"], "mapping": section})
+    return all_results
+
+
+@router.get("/timeline")
+def api_timeline():
+    from core.attack_timeline import AttackTimeline
+    from core.session_manager import SessionManager
+    sm = SessionManager()
+    sessions = sm.list_sessions()[:5]
+    timeline = AttackTimeline()
+    for s in sessions:
+        data = sm.load(s["id"])
+        if data and data.get("commands"):
+            timeline.add_events_from_commands(data["commands"])
+    return {
+        "events": timeline.get_timeline(),
+        "phases": timeline.get_attack_path(),
+        "summary": timeline.get_phase_summary()
+    }
+
+
+@router.post("/network-discovery/plan")
+def api_network_discovery_plan(body: dict = Body(...)):
+    from core.network_discovery import NetworkDiscovery
+    nd = NetworkDiscovery()
+    target = body.get("target", "192.168.1.1")
+    depth = body.get("depth", "basic")
+    return nd.generate_discovery_plan(target, depth)
+
+
+@router.post("/network-discovery/parse")
+def api_network_discovery_parse(body: dict = Body(...)):
+    from core.network_discovery import NetworkDiscovery
+    nd = NetworkDiscovery()
+    output = body.get("output", "")
+    return nd.parse_discovery_output(output)
+
+
+@router.post("/wordlist/generate")
+def api_wordlist_generate(body: dict = Body(...)):
+    from core.wordlist_generator import WordlistGenerator
+    gen = WordlistGenerator()
+    target = body.get("target", {})
+    return gen.generate_from_target(target)
+
+
+@router.post("/wordlist/usernames")
+def api_wordlist_usernames(body: dict = Body(...)):
+    from core.wordlist_generator import WordlistGenerator
+    gen = WordlistGenerator()
+    target = body.get("target", {})
+    return gen.generate_usernames(target)
+
+
+@router.post("/sessions/{session_id}/share")
+def api_share_finding(session_id: str, body: dict = Body(...)):
+    from core.session_router import get_router
+    router = get_router()
+    finding_type = body.get("type", "targets")
+    data = body.get("data", {})
+    router.share_finding(finding_type, data)
+    return {"shared": True, "type": finding_type}
+
+
+@router.get("/sessions/shared")
+def api_shared_findings():
+    from core.session_router import get_router
+    return get_router().get_shared_findings()
+
+
+@router.post("/sessions/{session_id}/user")
+def api_set_session_user(session_id: str, body: dict = Body(...)):
+    from core.session_router import get_router
+    router = get_router()
+    user = body.get("user", "")
+    ok = router.set_user(session_id, user)
+    return {"ok": ok}

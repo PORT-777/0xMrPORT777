@@ -29,7 +29,13 @@ APP/
 │   ├── target_graph.py     # Network topology graph builder
 │   ├── plugin_manager.py   # **Plugin system (scanners/exploits)**
 │   ├── cve_updater.py      # **CVE auto-update from NVD API**
-│   └── cve_scheduler.py    # **CVE scheduler (24h auto-fetch)**
+│   ├── cve_scheduler.py    # **CVE scheduler (24h auto-fetch + persistence)**
+│   ├── post_exploit.py     # **Post-exploitation automation (26 modules)**
+│   ├── payload_generator.py # **Smart payload generator (12 shell types)**
+│   ├── compliance_mapper.py # **OWASP/MITRE/NIST/PTES compliance mapping**
+│   ├── attack_timeline.py  # **Attack phase timeline builder**
+│   ├── network_discovery.py # **Network discovery automation**
+│   └── wordlist_generator.py # **Smart wordlist generator**
 ├── server/                 # Web UI backend
 │   ├── main.py             # FastAPI app (uvicorn)
 │   ├── api.py              # REST endpoints (33 routes)
@@ -213,9 +219,9 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - REST: `/api/cve/scheduler/status|start|stop|run`
 - Error tracking with recent error history
 
-### Unit/Integration Tests (v5.2)
+### Unit/Integration Tests (v5.3)
 - `tests/` directory with pytest suite
-- 118 tests across 8 modules:
+- **169 tests** across 15 modules:
   - `test_safety.py` — SafetyShield command validation
   - `test_exploit_engine.py` — CVE matching, Metasploit suggestions
   - `test_context_compressor.py` — Output compression, structured extraction
@@ -224,7 +230,8 @@ python port777.py --serve    → Start Web UI server (port 7777)
   - `test_brain.py` — SessionBrain state machine, phase transitions
   - `test_memory_store.py` — Long-term memory, keyword matching
   - `test_workflow_engine.py` — Workflow definitions, phase prompts
-  - `test_cve_scheduler.py` — Scheduler lifecycle, run_once
+  - `test_cve_scheduler.py` — Scheduler lifecycle, persistence, run_once
+  - `test_integration.py` — Post-exploit, payloads, compliance, timeline, network, wordlist, cross-module
 - `requirements-dev.txt` — pytest, pytest-asyncio, pytest-cov, apscheduler
 - Run: `python -m pytest tests/ -v`
 
@@ -249,9 +256,93 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Hooked into `executor.run()` — installs missing tools before execution
 - Uses direct subprocess for tool checks (no recursion)
 
+### Post-Exploitation Automation (v5.3)
+- `core/post_exploit.py` — 26 modules across 4 categories
+- **Privilege Escalation**: LinPEAS, sudo check, kernel exploit, SUID bins, cron jobs, Windows privcheck
+- **Persistence**: SSH key, cron, systemd service, Windows scheduled task, registry run key
+- **Lateral Movement**: SMB scan, PsExec, SSH pivot, WinRM, ARP discovery, port forwarding
+- **Data Exfiltration**: Hash dump, SAM dump, browser creds, SSH keys, config files, DB dump
+- Integrated into assistant system prompt for AI-aware post-exploit suggestions
+
+### Smart Payload Generator (v5.3)
+- `core/payload_generator.py` — 12 shell types, 4 encoding methods, obfuscation
+- **Shell types**: bash, python, perl, php, ruby, nc, ncat, powershell, java, nodejs, golang, lua
+- **Encodings**: base64, base64_url, hex, URL encoding
+- **Meterpreter**: msfvenom commands for elf, exe, py, php, aspx, war, jar
+- **Obfuscation**: variable-based, base64-encoded payloads
+- API endpoints: `/api/payload/generate`, `/api/payload/generate-all`, `/api/payload/meterpreter`
+
+### Compliance Mapping (v5.3)
+- `core/compliance_mapper.py` — maps findings to 4 compliance frameworks
+- **OWASP Top 10 2021**: All 10 categories with keyword matching
+- **MITRE ATT&CK**: 15 techniques across Initial Access, Execution, Persistence, Lateral Movement, etc.
+- **NIST CSF**: 8 categories (PR.AC, PR.DS, PR.IP, PR.PT, DE.CM, DE.AE, RS.RP, RC.RP)
+- **PTES**: All 7 penetration testing phases
+- Auto-mapped in reports and system prompt context
+- API endpoints: `/api/compliance/map`, `/api/compliance/report`
+
+### Attack Timeline Builder (v5.3)
+- `core/attack_timeline.py` — automatic phase detection from commands
+- **10 phases**: reconnaissance, scanning, enumeration, vulnerability_analysis, exploitation, post_exploitation, lateral_movement, data_exfiltration, persistence, reporting
+- Auto-detects phase from command keywords
+- Extracts CVEs and open ports as findings
+- Export to JSON, format for prompt context
+- Integrated into reporter for compliance-aware reports
+
+### Network Discovery Automation (v5.3)
+- `core/network_discovery.py` — automated subnet scanning and adjacent network discovery
+- **15 discovery commands**: ARP scan, ping sweep, top ports, UDP, OS detection, vulnerability scripts, SMB, SNMP, MSSQL, RDP, SSH, subnets, DNS zone, subdomain enum
+- **Smart subnet calculation**: adjacent /24 networks from target IP
+- **Discovery plans**: basic (2 steps) or full (5+ steps)
+- Parses nmap output to extract discovered hosts
+- API endpoints: `/api/network-discovery/plan`, `/api/network-discovery/parse`
+
+### Smart Wordlist Generator (v5.3)
+- `core/wordlist_generator.py` — context-aware wordlist generation
+- **Target-based**: generates from company name, domain, year, seasons, months
+- **Username generation**: from first/last name, domain, common patterns
+- **Mutation engine**: leet speak, symbols, year suffixes, capitalization
+- **35+ common passwords**, **27 common usernames** built-in
+- Save to file, generate custom from base words
+- API endpoints: `/api/wordlist/generate`, `/api/wordlist/usernames`
+
+### Collaborative Sessions (v5.3)
+- `core/session_router.py` — shared findings across sessions
+- `share_finding(type, data)` — broadcast findings to all sessions
+- `get_shared_findings()` — retrieve shared targets, credentials, vulnerabilities
+- Persistent state in `collab_sessions.json`
+- Session user tracking with `set_user()`
+- API endpoints: `/api/sessions/{id}/share`, `/api/sessions/shared`, `/api/sessions/{id}/user`
+
+### Custom Report Templates (v5.3)
+- `templates/report_executive.html` — professional dark-theme executive report
+- Compliance section with OWASP/MITRE/NIST/PTES mapping
+- Attack timeline visualization
+- Severity bar chart, responsive grid layout
+- Print-friendly CSS with `@media print` styles
+- Integrated into reporter for auto-generation
+
+### GitHub Actions CI/CD (v5.3)
+- `.github/workflows/ci.yml` — automated testing pipeline
+- **Test matrix**: Python 3.10, 3.11, 3.12, 3.13
+- **Linting**: py_compile for all core modules
+- **Security scan**: Bandit static analysis
+- **Docker build**: image build and smoke test
+- **Coverage**: Codecov integration
+
+### Integration Tests (v5.3)
+- `tests/test_integration.py` — 51 new tests across 8 test classes
+- Tests for: PostExploitEngine, PayloadGenerator, ComplianceMapper, AttackTimeline, NetworkDiscovery, WordlistGenerator
+- Cross-module integration tests
+- Full pipeline test (brain → exploit → post-exploit → compliance → timeline)
+
+### CVE Scheduler Persistence (v5.3)
+- `core/cve_scheduler.py` — persistent state across restarts
+- Saves interval, run_count, last_run, errors to `scheduler_state.json`
+- Auto-loads state on initialization
+- Test isolation with setup/teardown cleanup
+
 ## Pending / Future
 - Telegram Bot
-- Advanced PDF report styling
-- CVE auto-update scheduling persistence (save interval to config)
-- Integration tests for full API + WebSocket flow
-- GitHub Actions CI/CD pipeline
+- Advanced multi-user collaborative session UI
+- Full API integration tests for WebSocket flow
