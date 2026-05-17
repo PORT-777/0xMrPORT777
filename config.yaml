@@ -1,0 +1,77 @@
+# PORT-777 Configuration v5
+
+app:
+  name: "PORT-777"
+  version: "5.0.0"
+  max_iterations: 35
+  language: "auto"
+  guided_mode: false
+  auto_mode: false
+
+ai:
+  provider: "openrouter"
+  model: "openrouter/auto"
+  temperature: 0.15
+  timeout: 90
+  max_retries: 3
+  fallback_models:
+    - "google/gemini-2.0-flash-exp:free"
+    - "qwen/qwen3-235b-a22b:free"
+    - "mistralai/mistral-small-3.1-24b-instruct:free"
+  ollama_url: "http://localhost:11434"
+  ollama_model: "qwen2.5:7b"
+
+executor:
+  default_timeout: 120
+  long_running_timeout: 600
+  max_output_chars: 4000
+
+safety:
+  enabled: true
+  confirm_destructive: true
+  destructive_commands:
+    - "rm -rf"
+    - "dd if="
+    - "mkfs"
+    - "format"
+    - "fdisk"
+    - "> /dev/"
+    - "> /dev/sd"
+    - "mkswap"
+  confirm_scanning: false
+  max_targets_per_session: 20
+  require_target_confirmation: false
+
+sessions:
+  storage_dir: "sessions"
+  auto_save: true
+  max_history: 100
+
+reporting:
+  output_dir: "outputs"
+  formats: ["markdown", "txt", "html", "csv"]
+  include_raw_outputs: false
+  auto_generate: true
+
+findings_db:
+  enabled: true
+  auto_store_nmap: true
+  auto_store_credentials: true
+
+parallel:
+  enabled: true
+  max_workers: 3
+
+workflows:
+  enabled: true
+  auto_suggest: true
+
+brain:
+  enabled: true
+  auto_save: true
+  compress_threshold: 2000
+
+logging:
+  level: "INFO"
+  file: "logs/port777.log"
+  max_size_mb: 10

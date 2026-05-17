@@ -1,0 +1,352 @@
+# PORT-777 v5 🎯
+
+**Kali Linux Superhuman AI — Penetration Testing Assistant**
+
+> By **0xMr.PORT 777** | [Telegram](https://t.me/PB_9B) | [WhatsApp](https://wa.me/+201026778601) | [Instagram](https://www.instagram.com/i_c.n)
+
+---
+
+## Overview
+
+PORT-777 is an AI-powered penetration testing assistant that runs on Kali Linux. Talk to it in **Arabic or English** — it understands your intent, executes real commands, discovers vulnerabilities, exploits them, and generates professional reports.
+
+**No flags. No menus. Just talk.**
+
+```bash
+python port777.py
+```
+
+Then type anything:
+- `"افحص 192.168.1.5"` — Scan a target
+- `"Find vulnerabilities on example.com"` — Web pentest
+- `"What did we find on port 80?"` — Ask about results
+- `"Try to exploit CVE-2021-41773"` — Auto-exploit
+
+---
+
+## Features
+
+### 🧠 AI-Powered Intelligence
+- **Conversational REPL** — ChatGPT-style interface, type anything naturally
+- **Intent Detection** — AI understands scan, exploit, question, system admin
+- **3-Step Lookahead Planning** — Plans ahead, not just the next command
+- **Learn from Failure** — Auto-fallback when commands fail
+- **Parallel Execution** — Runs compatible commands simultaneously
+- **Command Chaining** — If-condition-then automated execution
+- **Context Compression** — 5000-line output → 20-line summary
+
+### 💣 Exploit Engine (102 CVEs)
+- **42 services covered**: Apache, Nginx, Tomcat, MySQL, PostgreSQL, Redis, WordPress, Drupal, SMB, RDP, Exchange, Docker, Kubernetes, and more
+- **30 Metasploit modules** ready to execute
+- **Auto-exploit** — AI suggests and runs exploits directly via `msfconsole`
+- Matches by: port, service name, version, brand
+
+### 🕸️ Target Graph
+- Network topology visualization
+- Gateway detection, lateral path marking
+- Weakest path analysis (BFS shortest path)
+- Interactive hover tooltips in web dashboard
+
+### 🔧 Auto-Heal
+- Auto-detects missing tools before execution
+- Installs via `apt` (Linux), `pip` (Python), `brew` (macOS)
+- Retries automatically after installation
+
+### 🧵 Multi-Session Parallel
+- Run multiple pentest sessions simultaneously
+- Each session has independent brain, executor, history
+- `/session new`, `/session switch`, `/session close`
+
+### 🧠 Dual AI Provider
+| Provider | API Key | Models | Arabic | Offline |
+|----------|---------|--------|--------|---------|
+| **OpenRouter** | Required | 300+ | ✅ | ❌ |
+| **Ollama** | Not needed | qwen2.5, deepseek-r1, llama3.2 | ✅ (qwen2.5) | ✅ |
+
+Switch at runtime: `/model openrouter` or `/model ollama qwen2.5:7b`
+
+### 🖥️ Web Dashboard
+- **FastAPI backend** with 25 REST API routes
+- **WebSocket** live streaming — real-time AI responses
+- **React SPA** with Chat, Sessions, Findings, Graph pages
+- **Swagger docs** at `http://localhost:7777/docs`
+
+### 📄 Export Reports
+- **Markdown** (.md) — Comprehensive pentest report
+- **HTML** (.html) — Styled dark theme with badges & timeline
+- **CSV** (.csv) — Structured data for spreadsheets
+- **Plain Text** (.txt) — Fallback format
+
+### 🧬 Long-Term Memory (RAG)
+- Remembers findings from all past sessions
+- Keyword-based retrieval before each chat
+- Avoids re-scanning known targets
+
+### 🛡️ Safety Shield
+- Blocks destructive commands (`rm -rf`, `dd if=`, etc.)
+- Confirms before running scanning/exploit commands
+- Safe commands (whoami, ls, ping) auto-execute
+
+---
+
+## Quick Start
+
+### 1. Install
+
+```bash
+git clone https://github.com/0xMrPORT777/PORT-777.git
+cd PORT-777
+pip install -r requirements.txt
+```
+
+### 2. Setup API Key
+
+```bash
+cp .env.example .env
+# Edit .env → add your OpenRouter API key
+# Get one free at: https://openrouter.ai/keys
+```
+
+### 3. Run
+
+```bash
+# Conversational REPL
+python port777.py
+
+# Web Dashboard
+python port777.py --serve
+# Open http://localhost:7777
+```
+
+---
+
+## Usage Examples
+
+### REPL Mode
+```
+$ python port777.py
+
+You: افحص 192.168.1.10
+PORT-777: جاري الفحص...
+[>] nmap -sV -sC 192.168.1.10
+[*] Found: Port 22 (OpenSSH), Port 80 (Apache 2.4.49)
+[*] Exploit suggestion: CVE-2021-41773 → msf exploit
+
+You: جرب تدخل عليه
+PORT-777: ⚡ Run: msfconsole -q -x "use exploit/multi/http/apache_normalize_path; set RHOSTS 192.168.1.10; run"
+Execute? [y/n]: y
+[>] Executing...
+[*] Output: Session opened...
+```
+
+### Web Dashboard
+```bash
+python port777.py --serve
+# Opens at http://localhost:7777
+# Chat tab → type naturally
+# Sessions tab → view past sessions
+# Findings tab → targets, creds, vulns
+# Graph tab → network topology with hover tooltips
+```
+
+### Slash Commands
+```
+/help                      → Show all commands
+/sessions                  → List past sessions
+/session new "recon X"     → Create parallel session
+/session switch <id>       → Switch active session
+/findings                  → Show findings database
+/reports                   → List generated reports
+/brain                     → View session brain state
+/model openrouter          → Switch AI provider
+/model ollama qwen2.5:7b   → Use local Ollama
+/models                    → List available Ollama models
+/about                     → Developer info
+/reset                     → Start fresh session
+/exit                      → Exit
+```
+
+---
+
+## Architecture
+
+```
+PORT-777/
+├── port777.py              # CLI entry point (REPL + --serve)
+├── config.yaml             # Configuration
+├── requirements.txt        # Python dependencies
+├── .env.example            # API key template
+├── .gitignore
+├── README.md
+├── PROJECT_MAP.md
+│
+├── core/                   # Core engine (17 modules)
+│   ├── assistant.py        # Conversational AI agent
+│   ├── brain.py            # Session state machine
+│   ├── auto_planner.py     # 3-step-ahead planning
+│   ├── executor.py         # Command execution + auto-heal
+│   ├── exploit_engine.py   # 102 CVE database + matching
+│   ├── target_graph.py     # Network topology builder
+│   ├── session_router.py   # Multi-session manager
+│   ├── memory_store.py     # Long-term memory (RAG)
+│   ├── reporter.py         # Multi-format report generator
+│   ├── safety.py           # Safety shield
+│   ├── findings_db.py      # SQLite findings database
+│   ├── knowledge_base.py   # 25+ Kali tools encyclopedia
+│   ├── workflow_engine.py  # 6 pentest workflows
+│   ├── parallel_executor.py # Multi-command parallelism
+│   ├── context_compressor.py # Output compression
+│   ├── session_manager.py  # Session save/load
+│   └── memory.py           # Session context
+│
+├── server/                 # Web UI backend (6 modules)
+│   ├── main.py             # FastAPI app
+│   ├── api.py              # REST endpoints (25 routes)
+│   ├── ws.py               # WebSocket handler
+│   ├── bridge.py           # AI session bridge
+│   ├── models.py           # Pydantic schemas
+│   └── ui/                 # React SPA source
+│       ├── src/            # React components
+│       └── vite.config.js
+│
+├── utils/                  # Utilities (5 modules)
+│   ├── ai_client.py        # OpenRouter + Ollama client
+│   ├── prompts.py          # AI system prompts
+│   ├── config.py           # YAML config loader
+│   ├── logger.py           # Rotating file logger
+│   └── output_parser.py    # nmap/hydra/gobuster parser
+│
+├── templates/              # Report templates
+│   └── report.html         # HTML report template
+│
+├── outputs/                # Generated reports
+├── sessions/               # Saved sessions
+├── logs/                   # Log files
+└── findings.db             # SQLite database
+```
+
+---
+
+## Configuration
+
+### `config.yaml`
+```yaml
+ai:
+  provider: "openrouter"      # or "ollama"
+  model: "openrouter/auto"    # OpenRouter model
+  ollama_url: "http://localhost:11434"
+  ollama_model: "qwen2.5:7b"  # Recommended for Arabic
+
+executor:
+  default_timeout: 120
+  long_running_timeout: 600
+
+safety:
+  enabled: true
+  confirm_destructive: true
+
+reporting:
+  formats: ["markdown", "txt", "html", "csv"]
+```
+
+### `.env`
+```
+OPENROUTER_API_KEY=your_key_here
+```
+
+---
+
+## API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | System health |
+| `/api/chat` | POST | Send message to AI |
+| `/api/sessions` | GET | List saved sessions |
+| `/api/sessions/{id}` | GET | Session details |
+| `/api/sessions/create` | POST | Create parallel session |
+| `/api/sessions/active` | GET | List active sessions |
+| `/api/findings/targets` | GET | Target summary |
+| `/api/findings/credentials` | GET | Discovered credentials |
+| `/api/findings/vulnerabilities` | GET | Found vulnerabilities |
+| `/api/reports` | GET | List reports |
+| `/api/exploits/suggest` | GET | CVE suggestions |
+| `/api/graph/targets` | GET | Network topology |
+| `/api/brain` | GET | Session brain state |
+| `/api/models` | GET | Available AI models |
+| `/api/models/switch` | POST | Switch AI provider |
+| `/ws/chat` | WebSocket | Live chat streaming |
+
+Full Swagger docs: `http://localhost:7777/docs`
+
+---
+
+## Requirements
+
+| Requirement | Version |
+|-------------|---------|
+| **OS** | Kali Linux (recommended) / Linux / macOS |
+| **Python** | 3.10+ |
+| **AI** | OpenRouter API key or Ollama (local) |
+| **Node.js** | 18+ (for building React SPA) |
+
+### Python Dependencies
+```
+python-dotenv>=1.0.0
+requests>=2.31.0
+rich>=13.0.0
+pyyaml>=6.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.0
+websockets>=14.0
+```
+
+### Optional: Ollama (Local AI)
+```bash
+# Install Ollama: https://ollama.ai
+ollama pull qwen2.5:7b    # Best for Arabic
+ollama pull deepseek-r1:8b # Best for reasoning
+```
+
+---
+
+## Exploit Coverage
+
+| Service | CVEs | Metasploit |
+|---------|------|------------|
+| Apache | 4 | ✅ |
+| Nginx | 6 | ❌ |
+| Tomcat | 4 | ✅ |
+| OpenSSH | 3 | ✅ |
+| Samba/SMB | 6 | ✅ |
+| MySQL | 2 | ✅ |
+| PostgreSQL | 10 | ❌ |
+| Redis | 2 | ✅ |
+| WordPress | 16 | ❌ |
+| Drupal | 2 | ✅ |
+| Jenkins | 3 | ✅ |
+| Docker | 2 | ❌ |
+| Kubernetes | 2 | ❌ |
+| Exchange | 2 | ✅ |
+| WebLogic | 2 | ❌ |
+| + 25 more services | 42 total | 30 modules |
+
+---
+
+## License
+
+MIT
+
+---
+
+## Developer
+
+**0xMr.PORT 777**
+- 📱 [Telegram](https://t.me/PB_9B)
+- 💬 [WhatsApp](https://wa.me/+201026778601)
+- 📸 [Instagram](https://www.instagram.com/i_c.n)
+
+---
+
+> ⚠️ **Disclaimer**: This tool is for authorized penetration testing only. Always obtain proper authorization before testing any system. The developer is not responsible for misuse.

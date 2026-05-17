@@ -1,0 +1,43 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project outputs
+outputs/
+sessions/
+logs/
+findings.db
+brain_state.json
+memory_store.json
+
+# Node
+node_modules/
+server/ui/node_modules/
+
+# React build (keep source, ignore build output)
+server/static/
+
+# Git
+.git/
