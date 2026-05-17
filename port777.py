@@ -53,7 +53,7 @@ def slash_command(cmd, args, assistant=None):
         help_table.add_row("/session switch <id>", "switch active session")
         help_table.add_row("/session close <id>", "close session")
         help_table.add_row("/plugins [category]", "list available plugins")
-        help_table.add_row("/cve [fetch|stats|schedule]", "CVE auto-update from NVD")
+        help_table.add_row("/cve [fetch|stats|schedule]", "CVE auto-update + scheduler")
         help_table.add_row("/findings", "show findings database")
         help_table.add_row("/reports", "list reports")
         help_table.add_row("/workflows", "show available workflows")

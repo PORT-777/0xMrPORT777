@@ -8,6 +8,7 @@ Speaks Arabic/English. Understands ANY input — scan, exploit, question, system
 ```
 APP/
 ├── port777.py              # ChatGPT-style REPL + --serve flag for Web UI
+├── install.sh              # **One-command installer for Kali Linux**
 ├── config.yaml             # v5 config
 ├── core/
 │   ├── assistant.py        # Conversational agent: chat() → answer | command | done
@@ -250,7 +251,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 
 ## Pending / Future
 - Telegram Bot
-- Multi-target parallel sessions
 - Advanced PDF report styling
 - CVE auto-update scheduling persistence (save interval to config)
 - Integration tests for full API + WebSocket flow
+- GitHub Actions CI/CD pipeline

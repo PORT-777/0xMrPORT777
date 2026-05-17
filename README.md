@@ -112,10 +112,16 @@ docker compose up -d
 
 ### 1. Install
 
+**Option A: One-Liner (Recommended for Kali)**
 ```bash
-git clone https://github.com/0xMrPORT777/PORT-777.git
-cd PORT-777
-pip install -r requirements.txt
+curl -sSL https://raw.githubusercontent.com/ahmedmohameddddd/0xMrPORT777/main/install.sh | bash
+```
+
+**Option B: Manual Install**
+```bash
+git clone https://github.com/ahmedmohameddddd/0xMrPORT777.git
+cd 0xMrPORT777
+chmod +x install.sh && ./install.sh
 ```
 
 ### 2. Setup API Key
