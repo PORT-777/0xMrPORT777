@@ -8,6 +8,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${GREEN}"
@@ -20,30 +21,37 @@ echo "  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   
 echo -e "  PORT-777 v5.3 — Installer${NC}"
 echo ""
 
-# Check OS
-if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    echo -e "${RED}⚠️  Warning: This script is optimized for Kali Linux.${NC}"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+# Navigate to project directory if inside it
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" 2>/dev/null || true
+
+# Handle existing directory (for git clone scenarios)
+if [ ! -d ".git" ]; then
+    echo -e "${YELLOW}📥 Cloning repository...${NC}"
+    if [ -d "0xMrPORT777" ]; then
+        echo -e "${YELLOW}  → Directory exists, pulling updates...${NC}"
+        cd 0xMrPORT777
+        git pull origin main --quiet 2>/dev/null || git fetch origin main && git reset --hard origin/main
+    else
+        echo -e "${RED}❌ Not a git repository. Please run:${NC}"
+        echo -e "${BLUE}   git clone https://github.com/PORT-777/0xMrPORT777.git${NC}"
+        echo -e "${BLUE}   cd 0xMrPORT777 && chmod +x install.sh && ./install.sh${NC}"
         exit 1
     fi
 fi
 
-# Auto-update check
-if [ -d ".git" ]; then
-    echo -e "${YELLOW}🔄 Checking for updates...${NC}"
-    git stash --quiet 2>/dev/null || true
-    git fetch --quiet origin main 2>/dev/null || true
-    LOCAL=$(git rev-parse HEAD 2>/dev/null)
-    REMOTE=$(git rev-parse origin/main 2>/dev/null)
-    if [ "$LOCAL" != "$REMOTE" ]; then
-        echo -e "${YELLOW}📥 New version available. Updating...${NC}"
-        git pull origin main --quiet
-        echo -e "${GREEN}✅ Updated to latest version.${NC}"
-    else
-        echo -e "${GREEN}✅ Already up to date.${NC}"
-    fi
+# Auto-update check (always runs, even on existing installs)
+echo -e "${YELLOW}🔄 Checking for updates...${NC}"
+git stash --quiet 2>/dev/null || true
+git fetch --quiet origin main 2>/dev/null || true
+LOCAL=$(git rev-parse HEAD 2>/dev/null)
+REMOTE=$(git rev-parse origin/main 2>/dev/null)
+if [ "$LOCAL" != "$REMOTE" ]; then
+    echo -e "${YELLOW}📥 New version available. Updating...${NC}"
+    git pull origin main --quiet
+    echo -e "${GREEN}✅ Updated to latest version.${NC}"
+else
+    echo -e "${GREEN}✅ Already up to date.${NC}"
 fi
 
 # Check Python
@@ -58,7 +66,7 @@ if ! command -v pip3 &> /dev/null; then
     sudo apt install -y python3-pip
 fi
 
-# Install System Dependencies (idempotent)
+# Install System Dependencies (idempotent — only installs missing)
 echo -e "${YELLOW}📦 Installing system dependencies...${NC}"
 sudo apt update -qq
 
@@ -75,11 +83,11 @@ sudo apt install -y $PDF_PACKAGES 2>/dev/null || {
     sudo apt install -y libgdk-pixbuf2.0-0 2>/dev/null || true
 }
 
-# Install Python Dependencies
+# Install Python Dependencies (all in one command)
 echo -e "${YELLOW}🐍 Installing Python dependencies...${NC}"
 pip3 install -r requirements.txt --break-system-packages 2>/dev/null || pip3 install -r requirements.txt
 
-# Install Dev Dependencies (Optional)
+# Install Dev Dependencies
 if [ -f "requirements-dev.txt" ]; then
     echo -e "${YELLOW}🧪 Installing dev dependencies (tests)...${NC}"
     pip3 install -r requirements-dev.txt --break-system-packages 2>/dev/null || pip3 install -r requirements-dev.txt
