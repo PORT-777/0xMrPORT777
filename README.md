@@ -114,12 +114,12 @@ docker compose up -d
 
 **Option A: One-Liner (Recommended for Kali)**
 ```bash
-curl -sSL https://raw.githubusercontent.com/ahmedmohameddddd/0xMrPORT777/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/PORT-777/0xMrPORT777/main/install.sh | bash
 ```
 
 **Option B: Manual Install**
 ```bash
-git clone https://github.com/ahmedmohameddddd/0xMrPORT777.git
+git clone https://github.com/PORT-777/0xMrPORT777.git
 cd 0xMrPORT777
 chmod +x install.sh && ./install.sh
 ```
