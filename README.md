@@ -35,9 +35,9 @@ Then type anything:
 - **Command Chaining** — If-condition-then automated execution
 - **Context Compression** — 5000-line output → 20-line summary
 
-### 💣 Exploit Engine (102 CVEs)
-- **42 services covered**: Apache, Nginx, Tomcat, MySQL, PostgreSQL, Redis, WordPress, Drupal, SMB, RDP, Exchange, Docker, Kubernetes, and more
-- **30 Metasploit modules** ready to execute
+### 💣 Exploit Engine (118 CVEs)
+- **48 services covered**: Apache, Nginx, Tomcat, MySQL, PostgreSQL, Redis, WordPress, Drupal, SMB, RDP, Exchange, Docker, Kubernetes, WebLogic, and more
+- **65+ Metasploit modules** ready to execute — **100% coverage for major services**
 - **Auto-exploit** — AI suggests and runs exploits directly via `msfconsole`
 - Matches by: port, service name, version, brand
 
@@ -214,7 +214,7 @@ PORT-777/
 │   ├── brain.py            # Session state machine
 │   ├── auto_planner.py     # 3-step-ahead planning
 │   ├── executor.py         # Command execution + auto-heal
-│   ├── exploit_engine.py   # 102 CVE database + matching
+│   ├── exploit_engine.py   # 118 CVE database + matching
 │   ├── target_graph.py     # Network topology builder
 │   ├── session_router.py   # Multi-session manager
 │   ├── memory_store.py     # Long-term memory (RAG)
@@ -237,7 +237,7 @@ PORT-777/
 │
 ├── server/                 # Web UI backend (6 modules)
 │   ├── main.py             # FastAPI app
-│   ├── api.py              # REST endpoints (29 routes)
+│   ├── api.py              # REST endpoints (33 routes)
 │   ├── ws.py               # WebSocket handler
 │   ├── bridge.py           # AI session bridge
 │   ├── models.py           # Pydantic schemas
@@ -357,21 +357,21 @@ ollama pull deepseek-r1:8b # Best for reasoning
 | Service | CVEs | Metasploit |
 |---------|------|------------|
 | Apache | 4 | ✅ |
-| Nginx | 6 | ❌ |
+| Nginx | 6 | ✅ |
 | Tomcat | 4 | ✅ |
 | OpenSSH | 3 | ✅ |
 | Samba/SMB | 6 | ✅ |
 | MySQL | 2 | ✅ |
-| PostgreSQL | 10 | ❌ |
+| PostgreSQL | 7 | ✅ |
 | Redis | 2 | ✅ |
-| WordPress | 16 | ❌ |
+| WordPress | 11 | ✅ |
 | Drupal | 2 | ✅ |
 | Jenkins | 3 | ✅ |
-| Docker | 2 | ❌ |
-| Kubernetes | 2 | ❌ |
+| Docker | 5 | ✅ |
+| Kubernetes | 5 | ✅ |
 | Exchange | 2 | ✅ |
-| WebLogic | 2 | ❌ |
-| + 25 more services | 42 total | 30 modules |
+| WebLogic | 5 | ✅ |
+| + 25 more services | 48 total | 65+ modules |
 
 ---
 

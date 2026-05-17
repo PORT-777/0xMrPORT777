@@ -106,13 +106,13 @@ APP/
 - Swagger docs at http://localhost:7777/docs
 
 ### Exploit Engine (v5)
-- Bundled CVE database (**102 entries across 42 services**)
+- Bundled CVE database (**118 entries across 48 services**)
 - Match by: port, service name, version, brand
-- Metasploit module suggestion per CVE (**30 modules**)
+- Metasploit module suggestion per CVE (**65+ modules**) — **100% coverage for major services**
 - **Auto-execute**: exploit suggestions feed into AI prompt context — AI can run Metasploit exploits directly via msfconsole
 - Prompt updated with msfconsole command format for exploit execution
 - `/api/exploits/suggest?target=X&port=Y` endpoint
-- Services covered: Apache, Nginx, Tomcat, MySQL, PostgreSQL, Redis, WordPress (10+), Drupal, Joomla, Jenkins, Elasticsearch, MongoDB, ProFTPD, vsFTPd, OpenSSH, Samba, SMB, RDP, Exchange, WebLogic, JBoss, Docker, Kubernetes, Grafana, Confluence, Jira, Fortinet, Citrix, Palo Alto, BIND, Exim, GlassFish, SNMP, NFS + more
+- Services covered: Apache, Nginx (6 CVEs), Tomcat, MySQL, PostgreSQL (7 CVEs), Redis, WordPress (11 CVEs), Drupal, Joomla, Jenkins, Elasticsearch, MongoDB, ProFTPD, vsFTPd, OpenSSH, Samba, SMB, RDP, Exchange, WebLogic (5 CVEs), JBoss, Docker (5 CVEs), Kubernetes (5 CVEs), Grafana, Confluence, Jira, Fortinet, Citrix, Palo Alto, BIND, Exim, GlassFish, SNMP, NFS + more
 
 ### Target Graph (v5)
 - Builds network topology from brain state + findings DB
