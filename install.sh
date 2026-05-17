@@ -1,6 +1,6 @@
 #!/bin/bash
 # PORT-777 Installation Script
-# Usage: curl -sSL https://raw.githubusercontent.com/ahmedmohameddddd/0xMrPORT777/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/PORT-777/0xMrPORT777/main/install.sh | bash
 # Or:    chmod +x install.sh && ./install.sh
 
 set -e
