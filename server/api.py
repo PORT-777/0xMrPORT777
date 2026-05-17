@@ -14,7 +14,7 @@ def get_status():
     sessions = list_sessions()
     return {
         "status": "online",
-        "version": "v5",
+        "version": "V1",
         "active_sessions": len(sessions),
         "timestamp": datetime.now().isoformat()
     }

@@ -48,7 +48,7 @@ export default function DashboardPage() {
       <div style={styles.header}>
         <h2 style={{ margin: 0, color: '#f44' }}>📊 PORT-777 Dashboard</h2>
         <span style={{ color: '#888', fontSize: 13 }}>
-          {status?.version || 'v5'} — {status?.status === 'online' ? '🟢 Online' : '⚫ Offline'}
+          {status?.version || 'V1'} — {status?.status === 'online' ? '🟢 Online' : '⚫ Offline'}
         </span>
       </div>
 

@@ -28,7 +28,7 @@ BANNER = """[bold red]
   ██╔═══╝ ██║   ██║██╔══██╗   ██║          ██╔╝    ██╔╝    ██╔╝
   ██║     ╚██████╔╝██║  ██║   ██║          ██║     ██║     ██║
   ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝          ╚═╝     ╚═╝     ╚═╝[/bold red]
-  [bold cyan]PORT-777 v5 — Kali Superhuman AI[/bold cyan]
+  [bold cyan]PORT-777 V1 — Kali Linux AI Assistant[/bold cyan]
   [dim]By 0xMr.PORT 777[/dim]"""
 
 
@@ -210,7 +210,7 @@ def slash_command(cmd, args, assistant=None):
 
     if cmd == "about":
         console.print(Panel(
-            "[bold]PORT-777 v5 — Kali Superhuman AI[/bold]\n\n"
+            "[bold]PORT-777 V1 — Kali Linux AI Assistant[/bold]\n\n"
             "[bold]Developer:[/bold] 0xMr.PORT 777\n"
             "[bold]Telegram:[/bold] https://t.me/PB_9B\n"
             "[bold]WhatsApp:[/bold] https://wa.me/+201026778601\n"

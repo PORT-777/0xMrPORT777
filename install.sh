@@ -18,7 +18,7 @@ echo "  ██████╔╝██║   ██║██████╔╝   
 echo "  ██╔═══╝ ██║   ██║██╔══██╗   ██║          ██╔╝    ██╔╝    ██╔╝"
 echo "  ██║     ╚██████╔╝██║  ██║   ██║          ██║     ██║     ██║"
 echo "  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝          ╚═╝     ╚═╝     ╚═╝"
-echo -e "  PORT-777 v5.3 — Installer${NC}"
+echo -e "  PORT-777 V1 — Installer${NC}"
 echo ""
 
 # Navigate to project directory if inside it

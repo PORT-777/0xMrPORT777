@@ -1,6 +1,6 @@
-# PORT-777 v5.3 🎯
+# PORT-777 V1 🎯
 
-**Kali Linux Superhuman AI — Penetration Testing Assistant**
+**Kali Linux AI Assistant — Penetration Testing**
 
 [![CI/CD](https://github.com/PORT-777/0xMrPORT777/actions/workflows/ci.yml/badge.svg)](https://github.com/PORT-777/0xMrPORT777/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-169%20passed-brightgreen)](https://github.com/PORT-777/0xMrPORT777)

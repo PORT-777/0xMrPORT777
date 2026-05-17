@@ -14,7 +14,7 @@ from utils.logger import get_logger
 
 log = get_logger("server")
 
-app = FastAPI(title="PORT-777 v5", version="5.0.0")
+app = FastAPI(title="PORT-777 V1", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,7 +46,7 @@ else:
     @app.get("/")
     def root():
         return {
-            "app": "PORT-777 v5",
+            "app": "PORT-777 V1",
             "developer": "0xMr.PORT 777",
             "telegram": "https://t.me/PB_9B",
             "whatsapp": "https://wa.me/+201026778601",

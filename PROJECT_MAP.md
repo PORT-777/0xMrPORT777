@@ -1,4 +1,4 @@
-# PROJECT MAP - PORT-777 v5 — Kali Linux Superhuman AI
+# PROJECT MAP - PORT-777 V1 — Kali Linux AI Assistant
 
 ## Overview
 Conversational AI assistant for Kali Linux. ChatGPT-style REPL + Web Dashboard.
