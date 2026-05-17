@@ -1,0 +1,37 @@
+services:
+  port777:
+    build: .
+    container_name: port777
+    ports:
+      - "7777:7777"
+    env_file:
+      - .env
+    volumes:
+      - ./outputs:/app/outputs
+      - ./sessions:/app/sessions
+      - ./logs:/app/logs
+      - ./findings.db:/app/findings.db
+      - ./brain_state.json:/app/brain_state.json
+      - ./memory_store.json:/app/memory_store.json
+    restart: unless-stopped
+    networks:
+      - port777-net
+
+  # Optional: Local Ollama AI (uncomment to use)
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: port777-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   restart: unless-stopped
+  #   networks:
+  #     - port777-net
+
+networks:
+  port777-net:
+    driver: bridge
+
+# volumes:
+#   ollama-data:

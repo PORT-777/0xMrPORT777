@@ -23,7 +23,7 @@ def load_config(path=None) -> dict:
                    "destructive_commands": ["rm -rf", "dd if=", "mkfs", "format", "fdisk"],
                    "confirm_scanning": True, "max_targets_per_session": 5, "require_target_confirmation": True},
         "sessions": {"storage_dir": "sessions", "auto_save": True, "max_history": 50},
-        "reporting": {"output_dir": "outputs", "formats": ["markdown", "txt", "html", "csv"],
+        "reporting": {"output_dir": "outputs", "formats": ["markdown", "txt", "html", "csv", "pdf"],
                        "include_raw_outputs": False, "auto_generate": True},
         "logging": {"level": "INFO", "file": "logs/port777.log", "max_size_mb": 10},
     }

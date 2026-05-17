@@ -1,0 +1,17 @@
+.env
+.git
+.gitignore
+__pycache__
+*.pyc
+.venv
+venv
+node_modules
+server/ui/node_modules
+server/static
+outputs
+sessions
+logs
+*.db
+*.json
+!config.yaml
+!requirements.txt

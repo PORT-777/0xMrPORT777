@@ -222,3 +222,35 @@ def get_brain():
         }
     except Exception as e:
         return {"error": str(e)}
+
+
+@router.get("/plugins")
+def api_list_plugins(category: str = Query("")):
+    from core.plugin_manager import get_plugin_manager
+    pm = get_plugin_manager()
+    cat = category if category else None
+    return pm.list_plugins(category=cat)
+
+
+@router.post("/plugins/{plugin_name}/run")
+def api_run_plugin(plugin_name: str, body: dict = Body(...)):
+    from core.plugin_manager import get_plugin_manager
+    pm = get_plugin_manager()
+    target = body.get("target", "")
+    kwargs = body.get("kwargs", {})
+    return pm.run_plugin(plugin_name, target, **kwargs)
+
+
+@router.get("/cve/stats")
+def api_cve_stats():
+    from core.cve_updater import get_cve_updater
+    return get_cve_updater().get_stats()
+
+
+@router.post("/cve/fetch")
+def api_cve_fetch(body: dict = Body(...)):
+    from core.cve_updater import get_cve_updater
+    days = body.get("days", 30)
+    max_results = body.get("max_results", 50)
+    cves = get_cve_updater().fetch_recent(days=days, max_results=max_results)
+    return {"count": len(cves), "cves": cves[:20]}

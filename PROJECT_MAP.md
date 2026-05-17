@@ -25,7 +25,9 @@ APP/
 │   ├── workflow_engine.py  # 6 pentest workflows
 │   ├── parallel_executor.py # Multi-command parallelism
 │   ├── exploit_engine.py   # CVE matching + Metasploit suggestions
-│   └── target_graph.py     # Network topology graph builder
+│   ├── target_graph.py     # Network topology graph builder
+│   ├── plugin_manager.py   # **Plugin system (scanners/exploits)**
+│   └── cve_updater.py      # **CVE auto-update from NVD API**
 ├── server/                 # Web UI backend
 │   ├── main.py             # FastAPI app (uvicorn)
 │   ├── api.py              # REST endpoints
@@ -34,6 +36,14 @@ APP/
 │   ├── bridge.py           # KaliAssistant wrapper
 │   ├── ui/                 # React SPA source (Vite)
 │   └── static/             # Built frontend
+├── plugins/                # **Community plugins**
+│   ├── scanners/           # Scanner plugins (nmap_enhanced, etc.)
+│   ├── exploits/           # Exploit plugins (msf_exploit, etc.)
+│   └── post_exploit/       # Post-exploitation plugins
+├── templates/              # Report templates
+│   └── report.html         # HTML report template
+├── Dockerfile              # **Docker container**
+├── docker-compose.yml      # **Docker Compose**
 ├── utils/
 │   ├── ai_client.py        # OpenRouter API (retry + fallback)
 │   ├── prompts.py          # CONVERSATIONAL_PROMPT — answer | command | done
@@ -141,8 +151,30 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - **Markdown** (.md) — comprehensive pentest report
 - **HTML** (.html) — styled dark theme, badges, timeline
 - **CSV** (.csv) — structured data for spreadsheets
+- **PDF** (.pdf) — professional printable report via weasyprint
 - **Plain Text** (.txt) — fallback format
 - All generated automatically on session completion to `outputs/`
+
+### Docker Support
+- `Dockerfile` — Python 3.13 slim base
+- `docker-compose.yml` — app + optional Ollama service
+- Volumes for outputs, sessions, logs, DB files
+- `docker compose up` to start
+
+### Plugin System
+- `core/plugin_manager.py` — auto-discovers plugins from `plugins/` directory
+- Categories: `scanners/`, `exploits/`, `post_exploit/`
+- Standard interface: `name`, `description`, `category`, `run(target, **kwargs)`
+- 3 example plugins included: nmap_enhanced, msf_exploit, enum_system
+- `/plugins` command in REPL, `/api/plugins` REST endpoint
+- Community can add custom scanners/exploits as Python files
+
+### CVE Auto-Update
+- `core/cve_updater.py` — fetches latest CVEs from NVD API
+- `/cve fetch` — download recent CVEs (default: last 30 days)
+- `/cve stats` — view cache statistics
+- Cached in `cve_cache.json`
+- `/api/cve/stats` and `/api/cve/fetch` REST endpoints
 
 ### Long-Term Memory (RAG)
 - `memory_store.json` stores sessions, findings, targets, credentials
@@ -158,5 +190,6 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Uses direct subprocess for tool checks (no recursion)
 
 ## Pending / Future
-- Docker support (docker-compose)
+- Telegram Bot
+- Multi-target parallel sessions
 - Plugin system for community scanners

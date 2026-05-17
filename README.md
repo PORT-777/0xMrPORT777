@@ -66,7 +66,7 @@ Then type anything:
 Switch at runtime: `/model openrouter` or `/model ollama qwen2.5:7b`
 
 ### 🖥️ Web Dashboard
-- **FastAPI backend** with 25 REST API routes
+- **FastAPI backend** with 29 REST API routes
 - **WebSocket** live streaming — real-time AI responses
 - **React SPA** with Chat, Sessions, Findings, Graph pages
 - **Swagger docs** at `http://localhost:7777/docs`
@@ -75,7 +75,26 @@ Switch at runtime: `/model openrouter` or `/model ollama qwen2.5:7b`
 - **Markdown** (.md) — Comprehensive pentest report
 - **HTML** (.html) — Styled dark theme with badges & timeline
 - **CSV** (.csv) — Structured data for spreadsheets
+- **PDF** (.pdf) — Professional printable report
 - **Plain Text** (.txt) — Fallback format
+
+### 🐳 Docker Support
+```bash
+docker compose up -d
+# App runs at http://localhost:7777
+# Volumes: outputs, sessions, logs, DB files
+```
+
+### 🔌 Plugin System
+- Auto-discovers plugins from `plugins/` directory
+- Categories: `scanners/`, `exploits/`, `post_exploit/`
+- `/plugins` command to list, `/api/plugins` REST endpoint
+- Community can add custom scanners/exploits as Python files
+
+### 🔄 CVE Auto-Update
+- Fetches latest CVEs from NVD API
+- `/cve fetch` to download, `/cve stats` to view cache
+- `/api/cve/stats` and `/api/cve/fetch` REST endpoints
 
 ### 🧬 Long-Term Memory (RAG)
 - Remembers findings from all past sessions
@@ -115,7 +134,9 @@ python port777.py
 
 # Web Dashboard
 python port777.py --serve
-# Open http://localhost:7777
+
+# Or with Docker
+docker compose up -d
 ```
 
 ---
@@ -161,6 +182,8 @@ python port777.py --serve
 /model openrouter          → Switch AI provider
 /model ollama qwen2.5:7b   → Use local Ollama
 /models                    → List available Ollama models
+/plugins [category]        → List available plugins
+/cve [fetch|stats]         → CVE auto-update from NVD
 /about                     → Developer info
 /reset                     → Start fresh session
 /exit                      → Exit
@@ -197,11 +220,18 @@ PORT-777/
 │   ├── parallel_executor.py # Multi-command parallelism
 │   ├── context_compressor.py # Output compression
 │   ├── session_manager.py  # Session save/load
-│   └── memory.py           # Session context
+│   ├── memory.py           # Session context
+│   ├── plugin_manager.py   # Plugin system
+│   └── cve_updater.py      # CVE auto-update from NVD
+│
+├── plugins/                # Community plugins
+│   ├── scanners/           # nmap_enhanced, etc.
+│   ├── exploits/           # msf_exploit, etc.
+│   └── post_exploit/       # enum_system, etc.
 │
 ├── server/                 # Web UI backend (6 modules)
 │   ├── main.py             # FastAPI app
-│   ├── api.py              # REST endpoints (25 routes)
+│   ├── api.py              # REST endpoints (29 routes)
 │   ├── ws.py               # WebSocket handler
 │   ├── bridge.py           # AI session bridge
 │   ├── models.py           # Pydantic schemas
@@ -275,6 +305,10 @@ OPENROUTER_API_KEY=your_key_here
 | `/api/brain` | GET | Session brain state |
 | `/api/models` | GET | Available AI models |
 | `/api/models/switch` | POST | Switch AI provider |
+| `/api/plugins` | GET | List available plugins |
+| `/api/plugins/{name}/run` | POST | Run a plugin |
+| `/api/cve/stats` | GET | CVE cache statistics |
+| `/api/cve/fetch` | POST | Fetch CVEs from NVD |
 | `/ws/chat` | WebSocket | Live chat streaming |
 
 Full Swagger docs: `http://localhost:7777/docs`
@@ -300,6 +334,7 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.34.0
 pydantic>=2.10.0
 websockets>=14.0
+weasyprint>=62.0
 ```
 
 ### Optional: Ollama (Local AI)

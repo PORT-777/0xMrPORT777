@@ -52,6 +52,8 @@ def slash_command(cmd, args, assistant=None):
         help_table.add_row("/session new <objective>", "create new parallel session")
         help_table.add_row("/session switch <id>", "switch active session")
         help_table.add_row("/session close <id>", "close session")
+        help_table.add_row("/plugins [category]", "list available plugins")
+        help_table.add_row("/cve [fetch|stats]", "CVE auto-update from NVD")
         help_table.add_row("/findings", "show findings database")
         help_table.add_row("/reports", "list reports")
         help_table.add_row("/workflows", "show available workflows")
@@ -242,6 +244,36 @@ def slash_command(cmd, args, assistant=None):
             console.print(f"[green]{msg}[/green]")
         else:
             console.print(f"[red]{msg}[/red]")
+        return True
+
+    if cmd == "plugins":
+        from core.plugin_manager import get_plugin_manager
+        pm = get_plugin_manager()
+        cat = args[0] if args else None
+        plugins = pm.list_plugins(category=cat)
+        if not plugins:
+            console.print("[yellow]No plugins found.[/yellow]")
+            return True
+        console.print(f"[bold]Plugins ({len(plugins)}):[/bold]")
+        for p in plugins:
+            console.print(f"  {p['category']}/{p['name']} v{p['version']} — {p['description']}")
+        return True
+
+    if cmd == "cve":
+        from core.cve_updater import get_cve_updater
+        updater = get_cve_updater()
+        action = args[0].lower() if args else "stats"
+        if action == "fetch":
+            console.print("[yellow]Fetching CVEs from NVD API...[/yellow]")
+            cves = updater.fetch_recent()
+            console.print(f"[green]Fetched {len(cves)} CVEs.[/green]")
+            for c in cves[:10]:
+                console.print(f"  [{c['severity'].upper()}] {c['cve']} — {c['desc'][:80]}")
+        elif action == "stats":
+            stats = updater.get_stats()
+            console.print(f"[bold]CVE Cache:[/bold] {stats['total']} entries")
+            console.print(f"[bold]Last updated:[/bold] {stats['last_updated']}")
+            console.print(f"[bold]By severity:[/bold] {stats['by_severity']}")
         return True
 
     if cmd == "reset" and assistant:

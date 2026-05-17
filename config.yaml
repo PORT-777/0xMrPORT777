@@ -49,7 +49,7 @@ sessions:
 
 reporting:
   output_dir: "outputs"
-  formats: ["markdown", "txt", "html", "csv"]
+  formats: ["markdown", "txt", "html", "csv", "pdf"]
   include_raw_outputs: false
   auto_generate: true
 

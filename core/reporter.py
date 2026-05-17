@@ -39,8 +39,12 @@ class ReportGenerator:
             if content is None:
                 continue
             filepath = self.output_dir / f"{filename_base}{ext}"
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(content)
+            if isinstance(content, bytes):
+                with open(filepath, "wb") as f:
+                    f.write(content)
+            else:
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(content)
             files_created.append(str(filepath))
 
         return files_created
@@ -54,7 +58,22 @@ class ReportGenerator:
             return ".html", self._build_html(ctx)
         elif fmt == "csv":
             return ".csv", self._build_csv(ctx)
+        elif fmt == "pdf":
+            return ".pdf", self._build_pdf(ctx)
         return None, None
+
+    def _build_pdf(self, ctx):
+        html_content = self._build_html(ctx)
+        try:
+            from weasyprint import HTML
+            pdf_bytes = HTML(string=html_content).write_pdf()
+            return pdf_bytes
+        except ImportError:
+            log.warning("weasyprint not installed. Install with: pip install weasyprint")
+            return None
+        except Exception as e:
+            log.warning(f"PDF generation failed: {e}")
+            return None
 
         return files_created
 
