@@ -9,7 +9,7 @@ Speaks Arabic/English. Understands ANY input — scan, exploit, question, system
 APP/
 ├── port777.py              # ChatGPT-style REPL + --serve flag for Web UI
 ├── install.sh              # **One-command installer for Kali Linux**
-├── config.yaml             # v5 config
+├── config.yaml             # V1 config
 ├── core/
 │   ├── assistant.py        # Conversational agent: chat() → answer | command | done
 │   ├── brain.py            # Session state machine (targets, ports, priorities)
@@ -103,7 +103,7 @@ APP/
 - Multi-session: `/session new "objective"` creates parallel sessions; `/session switch <id>` to swap
 - **Model switching**: `/model openrouter` or `/model ollama qwen2.5:7b` — switch AI provider at runtime
 
-### Web Dashboard (v5)
+### Web Dashboard (V1)
 - `python port777.py --serve` → opens FastAPI server on port 7777
 - WebSocket live streaming — type in browser, AI replies in real-time
 - REST APIs: sessions, findings, reports, brain state, exploit suggestions, target graph
@@ -111,7 +111,7 @@ APP/
 - Graph page: **hover tooltips** (IP, OS, ports, creds/vulns), highlight on hover, click to select
 - Swagger docs at http://localhost:7777/docs
 
-### Exploit Engine (v5)
+### Exploit Engine (V1)
 - Bundled CVE database (**118 entries across 48 services**)
 - Match by: port, service name, version, brand
 - Metasploit module suggestion per CVE (**65+ modules**) — **100% coverage for major services**
@@ -120,20 +120,20 @@ APP/
 - `/api/exploits/suggest?target=X&port=Y` endpoint
 - Services covered: Apache, Nginx (6 CVEs), Tomcat, MySQL, PostgreSQL (7 CVEs), Redis, WordPress (11 CVEs), Drupal, Joomla, Jenkins, Elasticsearch, MongoDB, ProFTPD, vsFTPd, OpenSSH, Samba, SMB, RDP, Exchange, WebLogic (5 CVEs), JBoss, Docker (5 CVEs), Kubernetes (5 CVEs), Grafana, Confluence, Jira, Fortinet, Citrix, Palo Alto, BIND, Exim, GlassFish, SNMP, NFS + more
 
-### Target Graph (v5)
+### Target Graph (V1)
 - Builds network topology from brain state + findings DB
 - Nodes: targets with IP, OS, ports, credentials/vulnerabilities flags
 - Edges: service connections + same-subnet links
 - Weakest path analysis (BFS shortest path to high-value targets)
 - `/api/graph/targets` returns nodes + edges JSON for frontend visualization
 
-### Auto-Heal (v5)
+### Auto-Heal (V1)
 - `executor.ensure_tool(tool_name)` — auto-detect missing tools
 - Supports apt (Linux), pip (Python tools), brew (macOS)
 - Hooked into `executor.run()` — installs missing tools silently before execution
 - Logs installation status
 
-### Multi-Session Parallel (v5)
+### Multi-Session Parallel (V1)
 - `core/session_router.py` — manages multiple KaliAssistant instances
 - Each session has independent brain, executor, history
 - REPL: `/session new "recon target A"` → `/session switch <id>` → `/session close <id>`
@@ -172,7 +172,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
   /exit                     → Exit
 ```
 
-## Features (Complete v5)
+## Features (Complete V1)
 
 ### Developer Info
 - Banner shows "By 0xMr.PORT 777"
@@ -209,7 +209,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Cached in `cve_cache.json`
 - `/api/cve/stats` and `/api/cve/fetch` REST endpoints
 
-### CVE Scheduler (v5.2)
+### CVE Scheduler (V1)
 - `core/cve_scheduler.py` — automatic CVE updates every 24 hours (configurable)
 - Background daemon thread, non-blocking
 - `/cve schedule start [hours]` — start auto-fetch
@@ -219,7 +219,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - REST: `/api/cve/scheduler/status|start|stop|run`
 - Error tracking with recent error history
 
-### Unit/Integration Tests (v5.3)
+### Unit/Integration Tests (V1)
 - `tests/` directory with pytest suite
 - **169 tests** across 15 modules:
   - `test_safety.py` — SafetyShield command validation
@@ -235,7 +235,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - `requirements-dev.txt` — pytest, pytest-asyncio, pytest-cov, apscheduler
 - Run: `python -m pytest tests/ -v`
 
-### UI Enhancements (v5.2)
+### UI Enhancements (V1)
 - **Dashboard Page** (`DashboardPage.jsx`) — overview with stat cards, severity bar chart, session info, target table
 - **CVE Page** (`CVEPage.jsx`) — CVE database viewer, fetch from NVD, scheduler controls (start/stop/run/interval)
 - **Plugins Page** (`PluginsPage.jsx`) — plugin browser, category filter, run plugins with target input, result viewer
@@ -256,7 +256,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Hooked into `executor.run()` — installs missing tools before execution
 - Uses direct subprocess for tool checks (no recursion)
 
-### Post-Exploitation Automation (v5.3)
+### Post-Exploitation Automation (V1)
 - `core/post_exploit.py` — 26 modules across 4 categories
 - **Privilege Escalation**: LinPEAS, sudo check, kernel exploit, SUID bins, cron jobs, Windows privcheck
 - **Persistence**: SSH key, cron, systemd service, Windows scheduled task, registry run key
@@ -264,7 +264,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - **Data Exfiltration**: Hash dump, SAM dump, browser creds, SSH keys, config files, DB dump
 - Integrated into assistant system prompt for AI-aware post-exploit suggestions
 
-### Smart Payload Generator (v5.3)
+### Smart Payload Generator (V1)
 - `core/payload_generator.py` — 12 shell types, 4 encoding methods, obfuscation
 - **Shell types**: bash, python, perl, php, ruby, nc, ncat, powershell, java, nodejs, golang, lua
 - **Encodings**: base64, base64_url, hex, URL encoding
@@ -272,7 +272,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - **Obfuscation**: variable-based, base64-encoded payloads
 - API endpoints: `/api/payload/generate`, `/api/payload/generate-all`, `/api/payload/meterpreter`
 
-### Compliance Mapping (v5.3)
+### Compliance Mapping (V1)
 - `core/compliance_mapper.py` — maps findings to 4 compliance frameworks
 - **OWASP Top 10 2021**: All 10 categories with keyword matching
 - **MITRE ATT&CK**: 15 techniques across Initial Access, Execution, Persistence, Lateral Movement, etc.
@@ -281,7 +281,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Auto-mapped in reports and system prompt context
 - API endpoints: `/api/compliance/map`, `/api/compliance/report`
 
-### Attack Timeline Builder (v5.3)
+### Attack Timeline Builder (V1)
 - `core/attack_timeline.py` — automatic phase detection from commands
 - **10 phases**: reconnaissance, scanning, enumeration, vulnerability_analysis, exploitation, post_exploitation, lateral_movement, data_exfiltration, persistence, reporting
 - Auto-detects phase from command keywords
@@ -289,7 +289,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Export to JSON, format for prompt context
 - Integrated into reporter for compliance-aware reports
 
-### Network Discovery Automation (v5.3)
+### Network Discovery Automation (V1)
 - `core/network_discovery.py` — automated subnet scanning and adjacent network discovery
 - **15 discovery commands**: ARP scan, ping sweep, top ports, UDP, OS detection, vulnerability scripts, SMB, SNMP, MSSQL, RDP, SSH, subnets, DNS zone, subdomain enum
 - **Smart subnet calculation**: adjacent /24 networks from target IP
@@ -297,7 +297,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Parses nmap output to extract discovered hosts
 - API endpoints: `/api/network-discovery/plan`, `/api/network-discovery/parse`
 
-### Smart Wordlist Generator (v5.3)
+### Smart Wordlist Generator (V1)
 - `core/wordlist_generator.py` — context-aware wordlist generation
 - **Target-based**: generates from company name, domain, year, seasons, months
 - **Username generation**: from first/last name, domain, common patterns
@@ -306,7 +306,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Save to file, generate custom from base words
 - API endpoints: `/api/wordlist/generate`, `/api/wordlist/usernames`
 
-### Collaborative Sessions (v5.3)
+### Collaborative Sessions (V1)
 - `core/session_router.py` — shared findings across sessions
 - `share_finding(type, data)` — broadcast findings to all sessions
 - `get_shared_findings()` — retrieve shared targets, credentials, vulnerabilities
@@ -314,7 +314,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Session user tracking with `set_user()`
 - API endpoints: `/api/sessions/{id}/share`, `/api/sessions/shared`, `/api/sessions/{id}/user`
 
-### Custom Report Templates (v5.3)
+### Custom Report Templates (V1)
 - `templates/report_executive.html` — professional dark-theme executive report
 - Compliance section with OWASP/MITRE/NIST/PTES mapping
 - Attack timeline visualization
@@ -322,7 +322,7 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - Print-friendly CSS with `@media print` styles
 - Integrated into reporter for auto-generation
 
-### GitHub Actions CI/CD (v5.3)
+### GitHub Actions CI/CD (V1)
 - `.github/workflows/ci.yml` — automated testing pipeline
 - **Test matrix**: Python 3.10, 3.11, 3.12, 3.13
 - **Linting**: py_compile for all core modules
@@ -330,13 +330,13 @@ python port777.py --serve    → Start Web UI server (port 7777)
 - **Docker build**: image build and smoke test
 - **Coverage**: Codecov integration
 
-### Integration Tests (v5.3)
+### Integration Tests (V1)
 - `tests/test_integration.py` — 51 new tests across 8 test classes
 - Tests for: PostExploitEngine, PayloadGenerator, ComplianceMapper, AttackTimeline, NetworkDiscovery, WordlistGenerator
 - Cross-module integration tests
 - Full pipeline test (brain → exploit → post-exploit → compliance → timeline)
 
-### CVE Scheduler Persistence (v5.3)
+### CVE Scheduler Persistence (V1)
 - `core/cve_scheduler.py` — persistent state across restarts
 - Saves interval, run_count, last_run, errors to `scheduler_state.json`
 - Auto-loads state on initialization

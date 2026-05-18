@@ -10,16 +10,18 @@ app:
 
 ai:
   provider: "openrouter"
-  model: "deepseek/deepseek-v4-flash:free"
+  model: "openrouter/free"
   temperature: 0.15
-  timeout: 90
+  timeout: 120
   max_retries: 3
   fallback_models:
-    - "google/gemma-4-26b-a4b-it:free"
-    - "qwen/qwen3-next-80b-a3b-instruct:free"
+    - "minimax/minimax-m2.5:free"
     - "nvidia/nemotron-3-nano-30b-a3b:free"
+    - "liquid/lfm-2.5-1.2b-instruct:free"
+    - "deepseek/deepseek-v4-flash:free"
+    - "google/gemma-4-26b-a4b-it:free"
   ollama_url: "http://localhost:11434"
-  ollama_model: "qwen2.5:7b"
+  ollama_model: "phi3:latest"
 
 executor:
   default_timeout: 120
