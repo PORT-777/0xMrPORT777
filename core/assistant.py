@@ -27,6 +27,7 @@ from core.compliance_mapper import ComplianceMapper
 from core.attack_timeline import AttackTimeline
 from core.network_discovery import NetworkDiscovery
 from core.wordlist_generator import WordlistGenerator
+from core.fallback_commands import FallbackEngine
 
 log = get_logger("assistant")
 
@@ -68,6 +69,7 @@ class KaliAssistant:
         self.consecutive_failures = 0
         self.context_loaded = False
         self._pending_message = None
+        self._fallback = FallbackEngine()
 
     def chat(self, user_input):
         """
@@ -85,17 +87,21 @@ class KaliAssistant:
 
         system_prompt = self._build_system_prompt()
         user_message = self._build_user_message(user_input)
-
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(self.conversation_history)
         messages.append({"role": "user", "content": user_message})
 
         ai_reply = self.ai.ask(messages)
-        if not ai_reply:
-            return ("answer", {"content": "[-] AI unavailable. Check your API key."})
+
+        if not ai_reply or "AI unavailable" in ai_reply or "All 6 OpenRouter models failed" in ai_reply:
+            log.warning("AI unavailable, using deterministic fallback")
+            if not self._fallback.has_more():
+                self._fallback.parse(user_input)
+            return self._handle_fallback(user_input)
 
         decision = self._parse_json(ai_reply)
         if not decision:
+
             self.conversation_history.append({"role": "user", "content": user_message})
             return ("answer", {"content": ai_reply})
 
@@ -145,6 +151,28 @@ class KaliAssistant:
         self._pending_message = None
         ai_reply = json.dumps(decision)
         return self._execute_and_respond(command, reason, decision, user_message, ai_reply)
+
+    def _handle_fallback(self, user_input):
+        """Execute commands deterministically when AI is unavailable."""
+        if user_input != "continue":
+            if not self._fallback.parse(user_input):
+                return ("answer", {"content": "I don't understand. Specify a target (IP/domain) or what you want to do (scan, vuln, recon, etc.)."})
+        cmd_info = self._fallback.next_command()
+        if not cmd_info:
+            return ("summary", {"summary": self._fallback.summary()})
+        command = cmd_info["command"]
+        reason = cmd_info["reason"]
+        print(f"[💡] {reason}")
+        print(f"[>] {command}")
+        output = self.executor.run(command)
+        print(f"[*] Output ({len(output or '')} chars):")
+        print((output or "")[:600])
+        self.brain.update_after_command(command, output)
+        self.memory.add_message("command", command)
+        self.timeline.add_event(command, output or "", command.split()[0] if command else "")
+        if self._fallback.has_more():
+            return ("command", {"command": command, "reason": reason, "output": (output or "")[:2000]})
+        return ("summary", {"summary": self._fallback.summary()})
 
     def _execute_and_respond(self, command, reason, decision, user_message, ai_reply):
         """Execute a command and return the result."""
