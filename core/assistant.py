@@ -156,7 +156,14 @@ class KaliAssistant:
         """Execute commands deterministically when AI is unavailable."""
         if user_input != "continue":
             if not self._fallback.parse(user_input):
-                return ("answer", {"content": "I don't understand. Specify a target (IP/domain) or what you want to do (scan, vuln, recon, etc.)."})
+                return ("answer", {"content": "⚠️ AI (OpenRouter) unreachable. The AI decides which tools to use and how.\n\n"
+                    "You can type a direct command like:\n"
+                    "  nmap -sV example.com\n"
+                    "  whatweb https://target.com\n"
+                    "  nikto -h https://target.com\n\n"
+                    "Or fix your internet so the AI can work:\n"
+                    "  ping openrouter.ai\n"
+                    "  curl -I https://openrouter.ai"})
         cmd_info = self._fallback.next_command()
         if not cmd_info:
             return ("summary", {"summary": self._fallback.summary()})
