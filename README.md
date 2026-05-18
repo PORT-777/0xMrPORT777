@@ -7,7 +7,21 @@
 [![CVEs](https://img.shields.io/badge/cves-118-orange)](https://github.com/PORT-777/0xMrPORT777)
 [![Modules](https://img.shields.io/badge/metasploit-65%2B-blue)](https://github.com/PORT-777/0xMrPORT777)
 
-> By **0xMr.PORT 777** | [Telegram](https://t.me/PB_9B) | [WhatsApp](https://wa.me/+201026778601) | [Instagram](https://www.instagram.com/i_c.n)
+> By **0xMr.PORT 777** | [Telegram](https://t.me/PB_9B) | [WhatsApp](https://wa.me/+201026778601) | [Instagram](https://www.instagram.com/i_c.n) | [YouTube](https://youtube.com/@ahmed-yasser-777) | [GitHub](https://github.com/PORT-777) | [TikTok](https://www.tiktok.com/@i_c.n1) | [Channel](https://t.me/f_c_o_6)
+
+---
+
+## 🛠️ Developer
+
+**0xMr.PORT 777**
+
+[![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=flat&logo=telegram&logoColor=white)](https://t.me/PB_9B)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=flat&logo=whatsapp&logoColor=white)](https://wa.me/+201026778601)
+[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=flat&logo=instagram&logoColor=white)](https://www.instagram.com/i_c.n)
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white)](https://youtube.com/@ahmed-yasser-777)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/PORT-777)
+[![TikTok](https://img.shields.io/badge/TikTok-000000?style=flat&logo=tiktok&logoColor=white)](https://www.tiktok.com/@i_c.n1)
+[![Telegram Channel](https://img.shields.io/badge/Channel-26A5E4?style=flat&logo=telegram&logoColor=white)](https://t.me/f_c_o_6)
 
 ---
 
@@ -461,15 +475,6 @@ ollama pull deepseek-r1:8b # Best for reasoning
 ## License
 
 MIT
-
----
-
-## Developer
-
-**0xMr.PORT 777**
-- 📱 [Telegram](https://t.me/PB_9B)
-- 💬 [WhatsApp](https://wa.me/+201026778601)
-- 📸 [Instagram](https://www.instagram.com/i_c.n)
 
 ---
 

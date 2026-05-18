@@ -51,6 +51,10 @@ else:
             "telegram": "https://t.me/PB_9B",
             "whatsapp": "https://wa.me/+201026778601",
             "instagram": "https://www.instagram.com/i_c.n",
+            "youtube": "https://youtube.com/@ahmed-yasser-777",
+            "github": "https://github.com/PORT-777",
+            "tiktok": "https://www.tiktok.com/@i_c.n1",
+            "telegram_channel": "https://t.me/f_c_o_6",
             "status": "online",
             "frontend": "not built (run `cd server/ui && npm install && npm run build`)",
             "docs": "/docs"

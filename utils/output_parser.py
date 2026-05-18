@@ -67,6 +67,25 @@ class OutputParser:
         return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', output)
 
     @staticmethod
+    def parse_dig(output: str) -> dict:
+        data = {"ips": [], "domain": "", "raw": output[:500]}
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith(";; ANSWER SECTION:"):
+                continue
+            parts = line.split()
+            if len(parts) >= 5 and parts[2] in ("A", "AAAA"):
+                data["ips"].append(parts[4].rstrip("."))
+            elif "->" in line:
+                for ip in re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', line):
+                    if ip not in data["ips"]:
+                        data["ips"].append(ip)
+        for ip in re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', output):
+            if ip not in data["ips"] and not ip.startswith("0."):
+                data["ips"].append(ip)
+        return data
+
+    @staticmethod
     def extract_hashes(output: str) -> list:
         md5_pattern = re.findall(r'\b[a-fA-F0-9]{32}\b', output)
         sha1_pattern = re.findall(r'\b[a-fA-F0-9]{40}\b', output)

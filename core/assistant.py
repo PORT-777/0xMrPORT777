@@ -115,7 +115,7 @@ class KaliAssistant:
 
         command = decision.get("command", "").strip()
         reason = decision.get("reason", "")
-        confirm = decision.get("confirm", True)
+        confirm = decision.get("confirm", False)
 
         if not command:
             self.conversation_history.append({"role": "user", "content": user_message})
@@ -131,7 +131,7 @@ class KaliAssistant:
             return ("command", {
                 "command": command,
                 "reason": reason,
-                "pending_approval": True,
+                "pending_approval": False,
                 "decision": decision
             })
 

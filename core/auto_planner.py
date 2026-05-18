@@ -135,6 +135,10 @@ class AutoPlanner:
     def get_fallback(self, failed_command):
         """Suggest alternative after a command failure."""
         cmd_base = failed_command.strip().split()[0] if failed_command.strip() else ""
+        cmd_lower = failed_command.lower()
+
+        if "nmap" in cmd_lower and "-p-" in cmd_lower:
+            return ["nmap -sV --top-ports 1000 TARGET (faster alternative to -p-)"]
         if cmd_base in self.FAILURE_FALLBACKS:
             fallbacks = self.FAILURE_FALLBACKS[cmd_base]
             log.info(f"Fallback for '{cmd_base}': {', '.join(fallbacks)}")

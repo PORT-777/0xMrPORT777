@@ -130,8 +130,12 @@ class CommandExecutor:
         return success
 
     def _is_long_running(self, command):
-        long_tools = ["nmap -p-", "masscan", "gobuster dir", "dirb", "sqlmap", "hydra", "hashcat", "john"]
-        return any(t in command for t in long_tools)
+        cmd_lower = command.lower()
+        if "masscan" in cmd_lower or "gobuster dir" in cmd_lower or "dirb" in cmd_lower or "sqlmap" in cmd_lower or "hydra" in cmd_lower or "hashcat" in cmd_lower or "john" in cmd_lower:
+            return True
+        if "nmap" in cmd_lower and "-p-" in cmd_lower:
+            return True
+        return False
 
     def _run_windows(self, command):
         safe_commands = ["whoami", "ipconfig", "ping", "nslookup", "netstat", "systeminfo", "echo", "tracert", "pathping"]

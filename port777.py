@@ -214,7 +214,11 @@ def slash_command(cmd, args, assistant=None):
             "[bold]Developer:[/bold] 0xMr.PORT 777\n"
             "[bold]Telegram:[/bold] https://t.me/PB_9B\n"
             "[bold]WhatsApp:[/bold] https://wa.me/+201026778601\n"
-            "[bold]Instagram:[/bold] https://www.instagram.com/i_c.n\n\n"
+            "[bold]Instagram:[/bold] https://www.instagram.com/i_c.n\n"
+            "[bold]YouTube:[/bold] https://youtube.com/@ahmed-yasser-777\n"
+            "[bold]GitHub:[/bold] https://github.com/PORT-777\n"
+            "[bold]TikTok:[/bold] https://www.tiktok.com/@i_c.n1\n"
+            "[bold]Telegram Channel:[/bold] https://t.me/f_c_o_6\n\n"
             "[dim]Open-source AI penetration testing assistant.[/dim]",
             title="ℹ About", box=box_style()
         ))
@@ -398,33 +402,39 @@ def main():
             console.print(f"[bold green]PORT-777[/bold green] {data['content']}")
 
         elif resp_type == "command":
-            if data.get("pending_approval"):
-                cmd = data["command"]
-                reason = data.get("reason", "")
-                if reason:
-                    console.print(f"[dim]{reason}[/dim]")
-                console.print(f"[bold yellow]⚡ Run:[/bold yellow] {cmd[:200]}")
-                confirm = Prompt.ask("[yellow]Execute?[/yellow]", choices=["y", "n", "Y", "N"], default="y")
-                if confirm.lower() == "y":
-                    decision = data["decision"]
-                    resp_type, data = assistant.confirm_and_execute(decision)
-                    if resp_type == "answer":
-                        console.print(f"[bold green]PORT-777[/bold green] {data['content']}")
-                    elif resp_type == "command":
-                        output = data.get("output", "")
-                        if output:
-                            console.print(Panel(output[:800], title="Output", box=box_style()))
-                        console.print(f"[dim]{cmd[:100]}[/dim]")
-                    elif resp_type == "summary":
-                        console.print(f"[bold]✓[/bold] {data['summary']}")
+            cmd = data.get("command", "")
+            output = data.get("output", "")
+            if output:
+                console.print(Panel(output[:800], title="Output", box=box_style()))
+            console.print(f"[dim]{cmd[:100]}[/dim]")
+
+            next_msg = "continue"
+            step = 0
+            while step < 10:
+                step += 1
+                try:
+                    resp_type, data = assistant.chat(next_msg)
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    console.print(f"[red]Error: {e}[/red]")
+                    break
+
+                if resp_type == "command":
+                    cmd = data.get("command", "")
+                    output = data.get("output", "")
+                    if output:
+                        console.print(Panel(output[:800], title="Output", box=box_style()))
+                    console.print(f"[dim]{cmd[:100]}[/dim]")
+                    next_msg = "continue"
+                elif resp_type == "answer":
+                    console.print(f"[bold green]PORT-777[/bold green] {data['content']}")
+                    break
+                elif resp_type == "summary":
+                    console.print(f"[bold green]✓ {data['summary']}[/bold green]")
+                    break
                 else:
-                    console.print("[yellow]Skipped.[/yellow]")
-            else:
-                output = data.get("output", "")
-                cmd = data.get("command", "")
-                if output:
-                    console.print(Panel(output[:800], title="Output", box=box_style()))
-                console.print(f"[dim]{cmd[:100]}[/dim]")
+                    break
 
         elif resp_type == "summary":
             console.print(f"[bold green]✓ {data['summary']}[/bold green]")
