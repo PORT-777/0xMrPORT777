@@ -1,4 +1,3 @@
-import json
 import re
 from datetime import datetime
 
@@ -27,7 +26,7 @@ from core.compliance_mapper import ComplianceMapper
 from core.attack_timeline import AttackTimeline
 from core.network_discovery import NetworkDiscovery
 from core.wordlist_generator import WordlistGenerator
-from core.fallback_commands import FallbackEngine
+from core.fallback_commands import FallbackEngine, is_direct_command
 
 log = get_logger("assistant")
 
@@ -35,8 +34,8 @@ log = get_logger("assistant")
 class KaliAssistant:
     """
     Conversational Kali Linux AI assistant.
-    User types ANYTHING — the AI understands and responds.
-    Supports: commands, answers, multi-step tasks, questions.
+    AI responds with TEXT. Commands extracted from ```bash code blocks.
+    Returns ("pending", data) — caller must approve then call execute_from_pending().
     """
 
     def __init__(self):
@@ -68,16 +67,20 @@ class KaliAssistant:
         self.step_count = 0
         self.consecutive_failures = 0
         self.context_loaded = False
-        self._pending_message = None
         self._fallback = FallbackEngine()
+        self._fallback_active = False
+        self._pending_data = None
 
-    def chat(self, user_input):
+    def chat(self, user_input, auto_approve=False):
         """
-        Process a single user message.
-        Returns (response_type, data) where response_type is:
-          - "answer": data = {"content": str}
-          - "command": data = {"command": str, "reason": str, "output": str}
-          - "summary": data = {"summary": str}
+        Process user input. Returns (response_type, data).
+        response_type: "answer", "pending", "summary"
+          - "pending": data = {"command": str, "reason": str, "output": "",
+                               "ai_reply": str, "user_message": str, "is_fallback": bool}
+            Caller must show command to user, get approval, then call execute_from_pending(data).
+          - "answer": data = {"content": str} — AI replied without command.
+          - "summary": data = {"summary": str} — objective complete.
+        If auto_approve=True, skips pending and executes immediately (returns "command").
         """
         self.step_count += 1
 
@@ -87,122 +90,73 @@ class KaliAssistant:
 
         system_prompt = self._build_system_prompt()
         user_message = self._build_user_message(user_input)
+
         messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(self.conversation_history)
+        for msg in self.conversation_history[-20:]:
+            messages.append(msg)
         messages.append({"role": "user", "content": user_message})
 
         ai_reply = self.ai.ask(messages)
 
         if not ai_reply or "AI unavailable" in ai_reply or "All 6 OpenRouter models failed" in ai_reply:
             log.warning("AI unavailable, using deterministic fallback")
+            self._fallback_active = True
             if not self._fallback.has_more():
                 self._fallback.parse(user_input)
-            return self._handle_fallback(user_input)
+            return self._handle_fallback(user_input, auto_approve)
 
-        decision = self._parse_json(ai_reply)
-        if not decision:
+        self._fallback_active = False
 
-            self.conversation_history.append({"role": "user", "content": user_message})
-            return ("answer", {"content": ai_reply})
+        command = self._extract_command(ai_reply)
 
-        response_type = decision.get("type", "command")
+        if command:
+            allowed, block_msg = self.safety.check_command(command)
+            if not allowed:
+                return ("answer", {"content": f"\u26a0\ufe0f {block_msg}"})
 
-        if response_type == "answer":
-            content = decision.get("content", decision.get("reason", ""))
-            self.conversation_history.append({"role": "user", "content": user_message})
-            self.conversation_history.append({"role": "assistant", "content": ai_reply})
-            return ("answer", {"content": content})
+            reason_match = re.search(r'\u269a\ufe0f\s*(.*?):', ai_reply)
+            reason = reason_match.group(1).strip() if reason_match else ""
 
-        if response_type == "done":
-            summary = decision.get("summary", "Done.")
-            log.info(f"Session {self.session_id}: objective complete")
-            self._finish(summary)
-            return ("summary", {"summary": summary})
-
-        command = decision.get("command", "").strip()
-        reason = decision.get("reason", "")
-        confirm = decision.get("confirm", False)
-
-        if not command:
-            self.conversation_history.append({"role": "user", "content": user_message})
-            return ("answer", {"content": reason or "I don't understand. Can you rephrase?"})
-
-        allowed, block_msg = self.safety.check_command(command)
-        if not allowed:
-            self.conversation_history.append({"role": "user", "content": user_message})
-            return ("answer", {"content": f"⚠️ {block_msg}"})
-
-        if confirm:
-            self._pending_message = user_message
-            return ("command", {
+            pending_data = {
                 "command": command,
                 "reason": reason,
-                "pending_approval": False,
-                "decision": decision
-            })
+                "output": "",
+                "ai_reply": ai_reply,
+                "user_message": user_message,
+                "is_fallback": False
+            }
 
-        return self._execute_and_respond(command, reason, decision, user_message, ai_reply)
+            if auto_approve:
+                return self.execute_from_pending(pending_data)
 
-    def confirm_and_execute(self, decision):
-        """Execute a previously pending command."""
-        command = decision.get("command", "")
-        reason = decision.get("reason", "")
-        user_message = self._pending_message or ""
-        self._pending_message = None
-        ai_reply = json.dumps(decision)
-        return self._execute_and_respond(command, reason, decision, user_message, ai_reply)
+            self._pending_data = pending_data
+            return ("pending", pending_data)
+        else:
+            self.conversation_history.append({"role": "user", "content": user_message})
+            self.conversation_history.append({"role": "assistant", "content": ai_reply})
+            return ("answer", {"content": ai_reply})
 
-    def _handle_fallback(self, user_input):
-        """Execute commands deterministically when AI is unavailable."""
-        if user_input != "continue":
-            if not self._fallback.parse(user_input):
-                return ("answer", {"content": "⚠️ AI (OpenRouter) unreachable. The AI decides which tools to use and how.\n\n"
-                    "You can type a direct command like:\n"
-                    "  nmap -sV example.com\n"
-                    "  whatweb https://target.com\n"
-                    "  nikto -h https://target.com\n\n"
-                    "Or fix your internet so the AI can work:\n"
-                    "  ping openrouter.ai\n"
-                    "  curl -I https://openrouter.ai"})
-        cmd_info = self._fallback.next_command()
-        if not cmd_info:
-            return ("summary", {"summary": self._fallback.summary()})
-        command = cmd_info["command"]
-        reason = cmd_info["reason"]
-        print(f"[💡] {reason}")
-        print(f"[>] {command}")
-        output = self.executor.run(command)
-        print(f"[*] Output ({len(output or '')} chars):")
-        print((output or "")[:600])
-        self.brain.update_after_command(command, output)
-        self.memory.add_message("command", command)
-        self.timeline.add_event(command, output or "", command.split()[0] if command else "")
-        if self._fallback.has_more():
+    def execute_from_pending(self, pending_data):
+        """Execute a pending command after user approval. Returns ("command", data)."""
+        command = pending_data["command"]
+        ai_reply = pending_data.get("ai_reply", "")
+        user_message = pending_data.get("user_message", "")
+        is_fallback = pending_data.get("is_fallback", False)
+
+        if is_fallback:
+            reason = pending_data.get("reason", "")
+            print(f"[>] {command}")
+            output = self.executor.run(command, timeout=300 if "nmap -p-" in command else 120)
+            print(f"[*] Output ({len(output or '')} chars):")
+            print((output or "")[:600])
+            self.brain.update_after_command(command, output)
+            self.memory.add_message("command", command)
+            self.timeline.add_event(command, output or "", command.split()[0] if command else "")
             return ("command", {"command": command, "reason": reason, "output": (output or "")[:2000]})
-        return ("summary", {"summary": self._fallback.summary()})
 
-    def _execute_and_respond(self, command, reason, decision, user_message, ai_reply):
-        """Execute a command and return the result."""
-        if reason:
-            print(f"[💡] {reason}")
         print(f"[>] {command[:200]}")
 
-        extras = decision.get("parallel", [])
-        chains = decision.get("chain", [])
-
-        if extras and self.parallel.is_compatible_group([command] + extras):
-            all_cmds = [command] + extras[:2]
-            print(f"[*] Parallel: {len(all_cmds)} commands")
-            results = self.parallel.run_group(all_cmds)
-            output_parts = []
-            for cmd, out in results:
-                print(f"  [{cmd[:60]}...] ({len(out)} chars)")
-                output_parts.append(f"--- {cmd} ---\n{out}")
-            output = "\n\n".join(output_parts)
-        elif chains:
-            output = self._execute_chain(command, chains)
-        else:
-            output = self.executor.run(command)
+        output = self.executor.run(command)
 
         self.brain.update_after_command(command, output)
         self.memory.add_message("command", command)
@@ -215,7 +169,6 @@ class KaliAssistant:
             "step": self.step_count,
             "command": command,
             "tool": command.split()[0] if command else "",
-            "reason": reason,
             "output": (output or "")[:2000],
             "timestamp": datetime.now().isoformat()
         })
@@ -231,28 +184,78 @@ class KaliAssistant:
             fallbacks = self.planner.get_fallback(command)
             if fallbacks:
                 return ("answer", {
-                    "content": f"⚠️ Command failed. Try: {', '.join(fallbacks[:3])}"
+                    "content": f"\u26a0\ufe0f Command failed. Try: {', '.join(fallbacks[:3])}"
                 })
+
+        reason_match = re.search(r'\u269a\ufe0f\s*(.*?):', ai_reply)
+        reason = reason_match.group(1).strip() if reason_match else ""
 
         return ("command", {
             "command": command,
             "reason": reason,
-            "output": compressed[:500],
-            "pending_approval": False
+            "output": compressed[:500]
         })
 
-    def _execute_chain(self, command, chains):
-        print(f"[>] Primary: {command[:150]}")
-        primary_output = self.executor.run(command)
-        combined = f"[PRIMARY] {command}\n{primary_output}\n"
-        for i, chain in enumerate(chains):
-            condition = chain.get("if", "")
-            then_cmd = chain.get("then", "")
-            if condition and then_cmd and condition in primary_output.lower():
-                print(f"[>] Chain {i+1}: {condition} → {then_cmd[:100]}")
-                chain_output = self.executor.run(then_cmd)
-                combined += f"\n[CHAIN {i+1}] {then_cmd}\n{chain_output}\n"
-        return combined
+    def _extract_command(self, text):
+        """Extract bash command from AI response.
+        Looks for ```bash ... ``` blocks, then lines starting with tool names."""
+        if not text:
+            return ""
+
+        code_blocks = re.findall(r'```(?:bash)?\s*\n(.*?)```', text, re.DOTALL)
+        for block in code_blocks:
+            cmd = block.strip().split('\n')[0].strip()
+            if cmd and not cmd.startswith('#') and not cmd.startswith('//'):
+                return cmd
+
+        for line in text.split('\n'):
+            line = line.strip()
+            if line.startswith('\u269a '):
+                cmd = line[2:].strip()
+                if cmd and is_direct_command(cmd):
+                    return cmd
+            first_word = line.split()[0].lower() if line.split() else ""
+            if first_word in ("nmap", "whatweb", "nikto", "curl", "dig",
+                              "whois", "sqlmap", "hydra", "nuclei", "gobuster",
+                              "ffuf", "wpscan", "searchsploit", "msfconsole",
+                              "msfvenom", "python3", "python", "sudo",
+                              "ping", "traceroute", "wget", "ls", "cat",
+                              "grep", "find", "chmod", "mkdir", "echo",
+                              "nslookup", "wafw00f"):
+                return line
+
+        return ""
+
+    def _handle_fallback(self, user_input, auto_approve=False):
+        """Smart fallback when AI unavailable."""
+        if user_input != "continue":
+            if not self._fallback.has_more() and not self._fallback.parse(user_input):
+                return ("answer", {"content": "\u26a0\ufe0f AI (OpenRouter) unreachable.\n"
+                    "Type a direct command, or fix internet:\n"
+                    "  sudo sh -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\n"
+                    "  ping -c 1 openrouter.ai"})
+
+        cmd_info = self._fallback.next_command()
+        if not cmd_info:
+            return ("summary", {"summary": self._fallback.summary()})
+
+        command = cmd_info["command"]
+        reason = cmd_info["reason"]
+
+        pending_data = {
+            "command": command,
+            "reason": reason,
+            "output": "",
+            "ai_reply": "",
+            "user_message": user_input,
+            "is_fallback": True
+        }
+
+        if auto_approve:
+            return self.execute_from_pending(pending_data)
+
+        self._pending_data = pending_data
+        return ("pending", pending_data)
 
     def switch_model(self, provider, model=None):
         providers = self.ai.list_providers()
@@ -292,36 +295,8 @@ class KaliAssistant:
             queue = self.brain.get_priority_summary()
             if queue and queue != "No pending high-priority actions.":
                 parts.append(f"\nPriorities:\n{queue}")
-        parts.append(
-            "\n\nRespond with JSON:"
-            '\n{"type": "answer", "content": "..."} — for replies, explanations, chat'
-            '\n{"type": "command", "command": "...", "reason": "...", "confirm": true/false} — to execute'
-            '\n{"type": "done", "summary": "..."} — if task is complete'
-            '\nUse "parallel" and "chain" for advanced execution.'
-        )
+        parts.append("\nCommands so far: " + str(len(self.all_commands)))
         return "\n".join(parts)
-
-    def _parse_json(self, text):
-        if not text:
-            return None
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            for pattern in [
-                r'```(?:json)?\s*\n?(.*?)\n?```',
-                r'(\{(?:[^{}]|(?:\{[^{}]*\}))*})',
-                r'\{[^{}]*\}'
-            ]:
-                match = re.search(pattern, text, re.DOTALL)
-                if match:
-                    try:
-                        return json.loads(match.group(1) if match.lastindex else match.group())
-                    except json.JSONDecodeError:
-                        continue
-            lower = text.lower()
-            if "sorry" in lower or "cannot" in lower:
-                return {"type": "answer", "content": text[:500]}
-        return None
 
     def _finish(self, summary):
         try:

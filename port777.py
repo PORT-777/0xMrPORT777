@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-PORT-777 v4 REPL — ChatGPT-style conversational AI for Kali Linux.
+PORT-777 V1 — Hunting Loop + AI + Approval
+Every command requires y/n approval, unless input ends with -y.
 Usage: python port777.py
-No flags. No menus. Just talk.
 """
-import sys, os, re, signal, json
+import sys, os, re, signal, json, time
 from pathlib import Path
 sys.path.append(os.path.dirname(__file__))
 
@@ -29,6 +29,7 @@ BANNER = """[bold red]
   ██║     ╚██████╔╝██║  ██║   ██║          ██║     ██║     ██║
   ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝          ╚═╝     ╚═╝     ╚═╝[/bold red]
   [bold cyan]PORT-777 V1 — Kali Linux AI Assistant[/bold cyan]
+  [dim]Every command needs approval. Add -y to auto-approve all.[/dim]
   [dim]By 0xMr.PORT 777[/dim]"""
 
 
@@ -37,7 +38,6 @@ def box_style():
 
 
 def slash_command(cmd, args, assistant=None):
-    """Handle /slash commands. Return True if should continue, False if exit."""
     if cmd in ("exit", "quit", "bye"):
         console.print("[yellow]Peace. ✌[/yellow]")
         return False
@@ -49,14 +49,8 @@ def slash_command(cmd, args, assistant=None):
         help_table.add_row("/help or /h", "show this help")
         help_table.add_row("/sessions", "list past sessions")
         help_table.add_row("/session <id>", "view session details")
-        help_table.add_row("/session new <objective>", "create new parallel session")
-        help_table.add_row("/session switch <id>", "switch active session")
-        help_table.add_row("/session close <id>", "close session")
-        help_table.add_row("/plugins [category]", "list available plugins")
-        help_table.add_row("/cve [fetch|stats|schedule]", "CVE auto-update + scheduler")
         help_table.add_row("/findings", "show findings database")
         help_table.add_row("/reports", "list reports")
-        help_table.add_row("/workflows", "show available workflows")
         help_table.add_row("/brain", "view current session brain state")
         help_table.add_row("/about", "developer info & links")
         help_table.add_row("/model <openrouter|ollama> [model_name]", "switch AI provider/model")
@@ -64,7 +58,8 @@ def slash_command(cmd, args, assistant=None):
         help_table.add_row("/reset", "start fresh session")
         help_table.add_row("/exit or /quit", "exit PORT-777")
         help_table.add_row("", "")
-        help_table.add_row("Any text", "talk to the AI naturally")
+        help_table.add_row("Any text", "AI picks tools and runs them")
+        help_table.add_row("-y at end", "auto-approve all commands")
         console.print(help_table)
         return True
 
@@ -181,20 +176,6 @@ def slash_command(cmd, args, assistant=None):
             console.print(f"[red]Error: {e}[/red]")
         return True
 
-    if cmd == "workflows":
-        try:
-            from core.workflow_engine import WorkflowEngine
-            wfs = WorkflowEngine.list_workflows()
-            t = Table(title="Workflows", header_style="bold cyan", box=box_style())
-            t.add_column("Name", style="bold yellow")
-            t.add_column("Description")
-            for n, d in wfs.items():
-                t.add_row(n, d["description"])
-            console.print(t)
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-        return True
-
     if cmd == "brain":
         try:
             from core.brain import SessionBrain
@@ -220,7 +201,7 @@ def slash_command(cmd, args, assistant=None):
             "[bold]TikTok:[/bold] https://www.tiktok.com/@i_c.n1\n"
             "[bold]Telegram Channel:[/bold] https://t.me/f_c_o_6\n\n"
             "[dim]Open-source AI penetration testing assistant.[/dim]",
-            title="ℹ About", box=box_style()
+            title="\u2139 About", box=box_style()
         ))
         return True
 
@@ -260,7 +241,7 @@ def slash_command(cmd, args, assistant=None):
             return True
         console.print(f"[bold]Plugins ({len(plugins)}):[/bold]")
         for p in plugins:
-            console.print(f"  {p['category']}/{p['name']} v{p['version']} — {p['description']}")
+            console.print(f"  {p['category']}/{p['name']} v{p['version']} \u2014 {p['description']}")
         return True
 
     if cmd == "cve":
@@ -272,7 +253,7 @@ def slash_command(cmd, args, assistant=None):
             cves = updater.fetch_recent()
             console.print(f"[green]Fetched {len(cves)} CVEs.[/green]")
             for c in cves[:10]:
-                console.print(f"  [{c['severity'].upper()}] {c['cve']} — {c['desc'][:80]}")
+                console.print(f"  [{c['severity'].upper()}] {c['cve']} \u2014 {c['desc'][:80]}")
         elif action == "stats":
             stats = updater.get_stats()
             console.print(f"[bold]CVE Cache:[/bold] {stats['total']} entries")
@@ -318,126 +299,137 @@ def slash_command(cmd, args, assistant=None):
 
 def main():
     console.print(Panel(BANNER, box=box_style()))
-    console.print("[dim]Write anything naturally. /help for commands. Ctrl+C or /exit to quit.[/dim]\n")
+    console.print("[dim]Write anything. Add [bold]-y[/bold] at end to auto-approve all commands. /help for commands.[/dim]\n")
 
-    from core.session_router import get_router
-    router = get_router()
-    active_id = router.create("default session")
+    from core.assistant import KaliAssistant
+    assistant = KaliAssistant()
 
-    def _get_asst():
-        return router.get(router.get_active_id() or active_id)
+    hunting = True
+    phase_names = ["Reconnaissance", "Vulnerability Scan", "Exploitation", "AI Attack", "Reporting"]
+    current_phase = 0
 
     while True:
         try:
+            if hunting:
+                phase_name = phase_names[current_phase % len(phase_names)]
+                console.print(f"[dim]Phase {current_phase + 1}: {phase_name} | Iteration {current_phase // len(phase_names) + 1}[/dim]")
+
             user_input = Prompt.ask("[bold cyan]You[/bold cyan]")
+
         except (EOFError, KeyboardInterrupt):
             print()
-            console.print("[yellow]Peace. ✌[/yellow]")
+            if hunting:
+                console.print("[yellow]Hunting paused. Type anything to resume or /exit to quit.[/yellow]")
+                hunting = False
+                continue
+            console.print("[yellow]Peace. \u270c[/yellow]")
             break
 
         if not user_input or not user_input.strip():
             continue
 
+        hunting = True
+
+        # Handle slash commands
         if user_input.startswith("/"):
             parts = user_input[1:].strip().split(None, 1)
             cmd = parts[0].lower()
             args = parts[1].split() if len(parts) > 1 else []
             if cmd in ("exit", "quit", "bye"):
-                console.print("[yellow]Peace. ✌[/yellow]")
+                console.print("[yellow]Peace. \u270c[/yellow]")
+                break
+            slash_command(cmd, args, assistant)
+            continue
+
+        # Check for -y flag (auto-approve)
+        words = user_input.strip().split()
+        auto_approve = words[-1] == "-y" if words else False
+        if auto_approve:
+            user_input = " ".join(words[:-1])
+
+        # Process through hunting loop
+        iteration = 0
+        max_iter = 20
+        current_input = user_input
+
+        while iteration <= max_iter:
+            try:
+                resp_type, data = assistant.chat(current_input, auto_approve=auto_approve)
+            except KeyboardInterrupt:
+                print()
+                console.print("[red]Cancelled.[/red]")
+                break
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]")
+                import traceback; traceback.print_exc()
                 break
 
-            if cmd == "session":
-                sub = args[0] if args else "list"
-                if sub == "new" and len(args) > 1:
-                    sid = router.create(" ".join(args[1:]))
-                    console.print(f"[green]Session {sid} created and active.[/green]")
-                elif sub == "list":
-                    sessions = router.list_sessions()
-                    if not sessions:
-                        console.print("[yellow]No active sessions.[/yellow]")
-                    else:
-                        console.print(f"[bold]Active Sessions ({len(sessions)}):[/bold]")
-                        for sid, info in sessions.items():
-                            active_mark = " ← active" if info["active"] else ""
-                            console.print(f"  {sid} {info['objective'][:50]} [{info['status']}]{active_mark}")
-                elif sub == "switch" and len(args) > 1:
-                    if router.switch(args[1]):
-                        console.print(f"[green]Switched to session {args[1]}.[/green]")
-                    else:
-                        console.print(f"[red]Session {args[1]} not found.[/red]")
-                elif sub == "close" and len(args) > 1:
-                    if router.close(args[1]):
-                        console.print(f"[green]Session {args[1]} closed.[/green]")
-                    else:
-                        console.print(f"[red]Session {args[1]} not found.[/red]")
+            if resp_type == "answer":
+                content = data.get("content", "")
+                console.print(f"[bold green]PORT-777[/bold green] {content[:800]}")
+                current_phase += 1
+                break
+
+            elif resp_type == "pending":
+                cmd = data.get("command", "")
+                reason = data.get("reason", "")
+                if reason:
+                    console.print(f"[bold]AI:[/bold] {reason}")
+                console.print(f"[bold yellow]Command:[/bold yellow] {cmd}")
+
+                if auto_approve:
+                    approved = True
                 else:
-                    console.print("[red]Usage: /session new <objective> | list | switch <id> | close <id>[/red]")
-                continue
+                    ans = Prompt.assemble(
+                        ("[cyan]Execute? (Y/n): [/cyan]", ""),
+                        default="y"
+                    )
+                    approved = ans.lower() in ("y", "yes", "")
 
-            if cmd == "reset":
-                sid = router.create("default session")
-                console.print(f"[green]Session reset. New ID: {sid}[/green]")
-                continue
+                if approved:
+                    resp_type, data = assistant.execute_from_pending(data)
 
-            slash_command(cmd, args, _get_asst())
-            continue
-
-        assistant = _get_asst()
-        if not assistant:
-            sid = router.create("default session")
-            assistant = router.get(sid)
-
-        try:
-            resp_type, data = assistant.chat(user_input)
-        except KeyboardInterrupt:
-            print()
-            console.print("[red]Cancelled.[/red]")
-            continue
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-            import traceback; traceback.print_exc()
-            continue
-
-        if resp_type == "answer":
-            console.print(f"[bold green]PORT-777[/bold green] {data['content']}")
-
-        elif resp_type == "command":
-            cmd = data.get("command", "")
-            output = data.get("output", "")
-            if output:
-                console.print(Panel(output[:800], title="Output", box=box_style()))
-            console.print(f"[dim]{cmd[:100]}[/dim]")
-
-            next_msg = "continue"
-            step = 0
-            while step < 10:
-                step += 1
-                try:
-                    resp_type, data = assistant.chat(next_msg)
-                except KeyboardInterrupt:
-                    break
-                except Exception as e:
-                    console.print(f"[red]Error: {e}[/red]")
-                    break
-
-                if resp_type == "command":
-                    cmd = data.get("command", "")
-                    output = data.get("output", "")
-                    if output:
-                        console.print(Panel(output[:800], title="Output", box=box_style()))
-                    console.print(f"[dim]{cmd[:100]}[/dim]")
-                    next_msg = "continue"
-                elif resp_type == "answer":
-                    console.print(f"[bold green]PORT-777[/bold green] {data['content']}")
-                    break
-                elif resp_type == "summary":
-                    console.print(f"[bold green]✓ {data['summary']}[/bold green]")
-                    break
+                    if resp_type == "command":
+                        output = data.get("output", "")
+                        cmd = data.get("command", "")
+                        if output:
+                            out_text = output[:800]
+                            lines = out_text.split('\n')
+                            if len(lines) > 12:
+                                out_text = '\n'.join(lines[:12]) + f"\n... ({len(lines)-12} more lines)"
+                            console.print(Panel(out_text, title="Output", box=box_style()))
+                        if cmd:
+                            console.print(f"[dim]{cmd[:100]}[/dim]")
+                        current_phase += 1
+                        # Auto-continue
+                        iteration += 1
+                        current_input = "continue"
+                        time.sleep(2)
+                        continue
+                    elif resp_type == "answer":
+                        console.print(f"[bold green]PORT-777[/bold green] {data.get('content', '')[:800]}")
+                        break
+                    elif resp_type == "summary":
+                        console.print(f"[bold green]\u2713 {data['summary']}[/bold green]")
+                        hunting = False
+                        break
                 else:
-                    break
+                    console.print("[yellow]Skipped.[/yellow]")
+                    current_phase += 1
+                    # Still continue to get next command
+                    iteration += 1
+                    current_input = "continue"
+                    time.sleep(2)
+                    continue
 
-        elif resp_type == "summary":
-            console.print(f"[bold green]✓ {data['summary']}[/bold green]")
+            elif resp_type == "summary":
+                console.print(f"[bold green]\u2713 {data['summary']}[/bold green]")
+                console.print("[dim]Objective complete. Type something new to start again.[/dim]")
+                hunting = False
+                break
+
+            else:
+                break
 
         print()
 
@@ -445,8 +437,4 @@ def main():
 if __name__ == "__main__":
     if _is_windows:
         signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
-    if len(sys.argv) > 1 and sys.argv[1] in ("--serve", "--server", "serve", "server"):
-        from server.main import start
-        start()
-    else:
-        main()
+    main()

@@ -1,22 +1,26 @@
 # PROJECT MAP - PORT-777 V1 — Kali Linux AI Assistant
 
 ## Overview
-Conversational AI assistant for Kali Linux. ChatGPT-style REPL + Web Dashboard.
-Speaks Arabic/English. Understands ANY input — scan, exploit, question, system admin.
+Conversational AI assistant for Kali Linux. Hunting Loop REPL.
+AI responds in text, commands extracted from ```bash blocks.
+Every command requires user approval (y/n) unless `-y` flag used.
+Smart fallback with 4 phases when AI is unreachable.
+Speaks Arabic/English.
 
 ## Architecture
 ```
 APP/
-├── port777.py              # ChatGPT-style REPL + --serve flag for Web UI
-├── install.sh              # **One-command installer for Kali Linux**
+├── port777.py              # Hunting Loop REPL + y/n approval system
+├── install.sh              # One-command installer for Kali Linux
 ├── config.yaml             # V1 config
+├── 777.py                  # Original Shadow Worm v5 (reference only)
 ├── core/
-│   ├── assistant.py        # Conversational agent: chat() → answer | command | done
+│   ├── assistant.py        # Text-based AI → extract_command() + execute_from_pending()
 │   ├── brain.py            # Session state machine (targets, ports, priorities)
 │   ├── auto_planner.py     # 3-step-ahead planning + failure fallback
 │   ├── context_compressor.py # Long output → structured summary
-│   ├── executor.py         # Command execution + **auto-heal (ensure_tool)**
-│   ├── session_router.py   # **Multi-session manager (parallel targets)**
+│   ├── executor.py         # Command execution + auto-heal (ensure_tool)
+│   ├── session_router.py   # Multi-session manager (parallel targets)
 │   ├── safety.py           # Safety shield
 │   ├── memory.py           # Session context
 │   ├── session_manager.py  # Save/load sessions
@@ -27,59 +31,38 @@ APP/
 │   ├── parallel_executor.py # Multi-command parallelism
 │   ├── exploit_engine.py   # CVE matching + Metasploit suggestions
 │   ├── target_graph.py     # Network topology graph builder
-│   ├── plugin_manager.py   # **Plugin system (scanners/exploits)**
-│   ├── cve_updater.py      # **CVE auto-update from NVD API**
-│   ├── cve_scheduler.py    # **CVE scheduler (24h auto-fetch + persistence)**
-│   ├── post_exploit.py     # **Post-exploitation automation (26 modules)**
-│   ├── payload_generator.py # **Smart payload generator (12 shell types)**
-│   ├── compliance_mapper.py # **OWASP/MITRE/NIST/PTES compliance mapping**
-│   ├── attack_timeline.py  # **Attack phase timeline builder**
-│   ├── network_discovery.py # **Network discovery automation**
-│   └── wordlist_generator.py # **Smart wordlist generator**
-├── server/                 # Web UI backend
-│   ├── main.py             # FastAPI app (uvicorn)
-│   ├── api.py              # REST endpoints (33 routes)
-│   ├── ws.py               # WebSocket handler (live chat)
-│   ├── models.py           # Pydantic schemas
-│   ├── bridge.py           # KaliAssistant wrapper
-│   ├── ui/                 # React SPA source (Vite)
-│   │   ├── src/
-│   │   │   ├── App.jsx             # Main app with 7 tabs
-│   │   │   ├── DashboardPage.jsx   # **Overview dashboard**
-│   │   │   ├── ChatPage.jsx        # **Enhanced chat**
-│   │   │   ├── CVEPage.jsx         # **CVE viewer + scheduler**
-│   │   │   ├── PluginsPage.jsx     # **Plugin browser + runner**
-│   │   │   ├── SessionsPage.jsx    # Session history
-│   │   │   ├── FindingsPage.jsx    # Findings tables
-│   │   │   ├── GraphPage.jsx       # Network graph
-│   │   │   └── api.js              # API client
-│   │   └── vite.config.js
-│   └── static/             # Built frontend
-├── plugins/                # **Community plugins**
-│   ├── scanners/           # Scanner plugins (nmap_enhanced, etc.)
-│   ├── exploits/           # Exploit plugins (msf_exploit, etc.)
-│   └── post_exploit/       # Post-exploitation plugins
-├── tests/                  # **Unit/Integration tests (118 tests)**
-│   ├── conftest.py
-│   ├── test_safety.py
-│   ├── test_exploit_engine.py
-│   ├── test_context_compressor.py
-│   ├── test_output_parser.py
-│   ├── test_knowledge_base.py
-│   ├── test_brain.py
-│   ├── test_memory_store.py
-│   ├── test_workflow_engine.py
-│   └── test_cve_scheduler.py
-├── templates/              # Report templates
-│   └── report.html         # HTML report template
-├── Dockerfile              # **Docker container**
-├── docker-compose.yml      # **Docker Compose**
+│   ├── plugin_manager.py   # Plugin system (scanners/exploits)
+│   ├── cve_updater.py      # CVE auto-update from NVD API
+│   ├── cve_scheduler.py    # CVE scheduler (24h auto-fetch + persistence)
+│   ├── post_exploit.py     # Post-exploitation automation (26 modules)
+│   ├── payload_generator.py # Smart payload generator (12 shell types)
+│   ├── compliance_mapper.py # OWASP/MITRE/NIST/PTES compliance mapping
+│   ├── attack_timeline.py  # Attack phase timeline builder
+│   ├── network_discovery.py # Network discovery automation
+│   ├── wordlist_generator.py # Smart wordlist generator
+│   └── fallback_commands.py # Smart 4-phase fallback (AI unreachable)
 ├── utils/
 │   ├── ai_client.py        # OpenRouter API (retry + fallback)
-│   ├── prompts.py          # CONVERSATIONAL_PROMPT — answer | command | done
+│   ├── prompts.py          # Ghost-style Arabic prompt — no JSON, no code
 │   ├── config.py           # YAML loader
 │   ├── logger.py           # Rotating file logger
-│   └── output_parser.py    # Parse nmap, hydra, gobuster
+│   └── output_parser.py    # Parse nmap, hydra, gobuster, dig
+├── server/                 # Web UI backend (not loaded by default)
+│   ├── main.py, api.py, ws.py, models.py, bridge.py
+│   └── ui/                 # React SPA (Vite)
+├── plugins/                # Community plugins
+│   ├── scanners/
+│   ├── exploits/
+│   └── post_exploit/
+├── tests/                  # 169 unit/integration tests
+│   ├── test_safety.py, test_exploit_engine.py, test_context_compressor.py
+│   ├── test_output_parser.py, test_knowledge_base.py, test_brain.py
+│   ├── test_memory_store.py, test_workflow_engine.py
+│   ├── test_cve_scheduler.py, test_integration.py
+│   └── conftest.py
+├── templates/              # Report templates
+├── Dockerfile
+├── docker-compose.yml
 ├── outputs/                # Reports + findings export
 ├── sessions/               # Saved sessions
 ├── logs/                   # Logs
@@ -87,262 +70,116 @@ APP/
 ├── brain_state.json        # Live brain state
 ├── .env / .env.example
 ├── requirements.txt
-├── requirements-dev.txt    # **Test dependencies**
+├── requirements-dev.txt
 └── PROJECT_MAP.md
 ```
 
 ## Features
 
-### Conversational REPL
-- No flags. No menu. `python port777.py` → ready to chat
-- AI auto-detects intent: scan, exploit, question, system, chat
-- Three response types: **answer** (chat), **command** (execute), **done** (finish)
-- Auto-confirmation for safe commands (ls, whoami), prompt for destructive (nmap, hydra)
-- Slash commands: /help, /sessions, /findings, /reports, /workflows, /brain, /reset, /exit
-- Continuous session — context persists across all messages
-- Multi-session: `/session new "objective"` creates parallel sessions; `/session switch <id>` to swap
-- **Model switching**: `/model openrouter` or `/model ollama qwen2.5:7b` — switch AI provider at runtime
+### Hunting Loop REPL
+- No flags. No menu. `python port777.py` → ready to hunt
+- AI auto-decides: answer (chat) or command (execute)
+- Commands extracted from AI text response via ```bash blocks
+- **y/n approval** before every command execution
+- **-y flag**: add `-y` at end of input to auto-approve all commands
+- Smart fallback with 4 phases when AI unreachable (Recon → Vuln → Exploit → Report)
+- Phase tracking: "Phase 1: Reconnaissance | Iteration 1"
+- Auto-continue: after each command, feeds "continue" to AI
+- Slash commands: /help, /sessions, /findings, /reports, /brain, /about, /reset, /exit
+- Model switching: `/model openrouter` or `/model ollama`
 
-### Web Dashboard (V1)
-- `python port777.py --serve` → opens FastAPI server on port 7777
-- WebSocket live streaming — type in browser, AI replies in real-time
-- REST APIs: sessions, findings, reports, brain state, exploit suggestions, target graph
-- React SPA with Chat, Sessions, Findings, Graph pages
-- Graph page: **hover tooltips** (IP, OS, ports, creds/vulns), highlight on hover, click to select
-- Swagger docs at http://localhost:7777/docs
+### Smart Fallback (No AI)
+When OpenRouter is unreachable, runs deterministic phases:
+1. **Reconnaissance**: whatweb, curl, dig, whois
+2. **Port Scanning**: nmap -sV --top-ports 1000
+3. **Vulnerability Scanning**: nikto, nmap --script vuln
+4. **Exploitation Research**: searchsploit
+Each phase shown to user for y/n approval.
 
 ### Exploit Engine (V1)
-- Bundled CVE database (**118 entries across 48 services**)
-- Match by: port, service name, version, brand
-- Metasploit module suggestion per CVE (**65+ modules**) — **100% coverage for major services**
-- **Auto-execute**: exploit suggestions feed into AI prompt context — AI can run Metasploit exploits directly via msfconsole
-- Prompt updated with msfconsole command format for exploit execution
-- `/api/exploits/suggest?target=X&port=Y` endpoint
-- Services covered: Apache, Nginx (6 CVEs), Tomcat, MySQL, PostgreSQL (7 CVEs), Redis, WordPress (11 CVEs), Drupal, Joomla, Jenkins, Elasticsearch, MongoDB, ProFTPD, vsFTPd, OpenSSH, Samba, SMB, RDP, Exchange, WebLogic (5 CVEs), JBoss, Docker (5 CVEs), Kubernetes (5 CVEs), Grafana, Confluence, Jira, Fortinet, Citrix, Palo Alto, BIND, Exim, GlassFish, SNMP, NFS + more
+- Bundled CVE database (118 entries across 48 services)
+- Match by port, service name, version, brand
+- Metasploit module suggestion per CVE (65+ modules)
+- Services: Apache, Nginx (6 CVEs), MySQL, PostgreSQL (7), Redis, WordPress (11), etc.
 
 ### Target Graph (V1)
-- Builds network topology from brain state + findings DB
-- Nodes: targets with IP, OS, ports, credentials/vulnerabilities flags
-- Edges: service connections + same-subnet links
-- Weakest path analysis (BFS shortest path to high-value targets)
-- `/api/graph/targets` returns nodes + edges JSON for frontend visualization
+- Network topology from brain state + findings DB
+- Weakest path analysis (BFS shortest path)
 
 ### Auto-Heal (V1)
-- `executor.ensure_tool(tool_name)` — auto-detect missing tools
-- Supports apt (Linux), pip (Python tools), brew (macOS)
-- Hooked into `executor.run()` — installs missing tools silently before execution
-- Logs installation status
+- auto-detect missing tools, auto-install via apt/pip
 
-### Multi-Session Parallel (V1)
-- `core/session_router.py` — manages multiple KaliAssistant instances
-- Each session has independent brain, executor, history
-- REPL: `/session new "recon target A"` → `/session switch <id>` → `/session close <id>`
-- API: `POST /api/sessions/create`, `GET /api/sessions/active`, `POST /api/sessions/{id}/switch|close`
-- WebSocket supports multi-session with session_id tracking
+### Long-Term Memory (RAG)
+- memory_store.json stores sessions, findings, targets
+- AI sees "Previous session memory" in context
+
+### Post-Exploitation (V1)
+- 26 modules: privilege escalation, persistence, lateral movement, exfiltration
+
+### Payload Generator (V1)
+- 12 shell types, 4 encodings, Metasploit payloads
+
+### Compliance Mapping (V1)
+- OWASP Top 10, MITRE ATT&CK, NIST CSF, PTES
+
+### Attack Timeline (V1)
+- 10 phases, auto-detected from commands
+
+### Network Discovery (V1)
+- 15 discovery commands, smart subnet calculation
+
+### Wordlist Generator (V1)
+- Target-based wordlists, mutation engine
+
+### CVE Auto-Update + Scheduler (V1)
+- Fetch from NVD API, auto-schedule every 24h
+- Persistent state across restarts
+
+### GitHub Actions CI/CD
+- Python 3.10-3.13 matrix, Bandit security scan
+- Docker build, 169 tests
 
 ## Core Flow
-1. User types ANYTHING naturally (Arabic/English)
-2. Brain initializes on first message
-3. AI receives CONVERSATIONAL_PROMPT + tool knowledge + brain state + exploit suggestions + target graph
-4. AI decides: answer | command (confirm?) | done
-5. If command → executor auto-installs missing tools if needed
-6. Output analyzed → brain updated → exploit engine re-matches → graph rebuilds
-7. Loop indefinitely until /exit
+1. User types anything (Arabic/English)
+2. If input ends with `-y`: auto-approve mode ON
+3. AI receives Ghost-style Arabic prompt + tool knowledge + brain state
+4. AI responds with text: analysis + ```bash command
+5. System extracts command from ```bash block
+6. **y/n approval**: shown to user before execution (unless auto-approve)
+7. If approved → executor runs command → brain updates
+8. Auto-continue: feeds "continue" to AI for next action
+9. If AI unreachable → Smart Fallback with 4 phases
+10. Loop until /exit or objective complete
 
 ## Commands
 ```
-python port777.py            → Start conversational REPL
-python port777.py --serve    → Start Web UI server (port 7777)
-  /help                     → Show slash commands
-  /sessions                 → List past sessions
-  /session <id>             → View session details
-  /session new <objective>  → Create new parallel session
-  /session switch <id>      → Switch active session
-  /session close <id>       → Close session
-  /findings                 → Show findings database
-  /reports                  → List reports
-  /workflows                → List available workflows
-  /brain                    → View current session brain state
-  /model <provider> [model] → Switch AI provider (openrouter/ollama)
-  /models                   → List available Ollama models
-  /plugins [category]       → List available plugins
-  /cve [fetch|stats|schedule] → CVE auto-update + scheduler
-  /about                    → Developer info & links
-  /reset                    → Start fresh session
-  /exit                     → Exit
+python port777.py    → Start hunting loop REPL
+  -y at end of text  → Auto-approve all commands
+  /help              → Show commands
+  /sessions          → List past sessions
+  /session <id>      → View session
+  /findings          → Show findings
+  /reports           → List reports
+  /brain             → View brain state
+  /model <provider>  → Switch AI provider
+  /about             → Developer info
+  /plugins           → List plugins
+  /cve [action]      → CVE operations
+  /reset             → Fresh session
+  /exit              → Exit
 ```
 
-## Features (Complete V1)
-
-### Developer Info
-- Banner shows "By 0xMr.PORT 777"
-- `/about` command: Telegram, WhatsApp, Instagram links
-- Web dashboard root shows developer info
-- Reports footer includes credits
-
-### Export Reports
-- **Markdown** (.md) — comprehensive pentest report
-- **HTML** (.html) — styled dark theme, badges, timeline
-- **CSV** (.csv) — structured data for spreadsheets
-- **PDF** (.pdf) — professional printable report via weasyprint
-- **Plain Text** (.txt) — fallback format
-- All generated automatically on session completion to `outputs/`
-
-### Docker Support
-- `Dockerfile` — Python 3.13 slim base
-- `docker-compose.yml` — app + optional Ollama service
-- Volumes for outputs, sessions, logs, DB files
-- `docker compose up` to start
-
-### Plugin System
-- `core/plugin_manager.py` — auto-discovers plugins from `plugins/` directory
-- Categories: `scanners/`, `exploits/`, `post_exploit/`
-- Standard interface: `name`, `description`, `category`, `run(target, **kwargs)`
-- 3 example plugins included: nmap_enhanced, msf_exploit, enum_system
-- `/plugins` command in REPL, `/api/plugins` REST endpoint
-- Community can add custom scanners/exploits as Python files
-
-### CVE Auto-Update
-- `core/cve_updater.py` — fetches latest CVEs from NVD API
-- `/cve fetch` — download recent CVEs (default: last 30 days)
-- `/cve stats` — view cache statistics
-- Cached in `cve_cache.json`
-- `/api/cve/stats` and `/api/cve/fetch` REST endpoints
-
-### CVE Scheduler (V1)
-- `core/cve_scheduler.py` — automatic CVE updates every 24 hours (configurable)
-- Background daemon thread, non-blocking
-- `/cve schedule start [hours]` — start auto-fetch
-- `/cve schedule stop` — stop scheduler
-- `/cve schedule run` — manual trigger
-- `/cve schedule status` — view scheduler state
-- REST: `/api/cve/scheduler/status|start|stop|run`
-- Error tracking with recent error history
-
-### Unit/Integration Tests (V1)
-- `tests/` directory with pytest suite
-- **169 tests** across 15 modules:
-  - `test_safety.py` — SafetyShield command validation
-  - `test_exploit_engine.py` — CVE matching, Metasploit suggestions
-  - `test_context_compressor.py` — Output compression, structured extraction
-  - `test_output_parser.py` — nmap, hydra, gobuster parsing
-  - `test_knowledge_base.py` — Tool knowledge, search, categories
-  - `test_brain.py` — SessionBrain state machine, phase transitions
-  - `test_memory_store.py` — Long-term memory, keyword matching
-  - `test_workflow_engine.py` — Workflow definitions, phase prompts
-  - `test_cve_scheduler.py` — Scheduler lifecycle, persistence, run_once
-  - `test_integration.py` — Post-exploit, payloads, compliance, timeline, network, wordlist, cross-module
-- `requirements-dev.txt` — pytest, pytest-asyncio, pytest-cov, apscheduler
-- Run: `python -m pytest tests/ -v`
-
-### UI Enhancements (V1)
-- **Dashboard Page** (`DashboardPage.jsx`) — overview with stat cards, severity bar chart, session info, target table
-- **CVE Page** (`CVEPage.jsx`) — CVE database viewer, fetch from NVD, scheduler controls (start/stop/run/interval)
-- **Plugins Page** (`PluginsPage.jsx`) — plugin browser, category filter, run plugins with target input, result viewer
-- **Chat Improvements** — typing indicator, clear chat button, better status colors, improved empty state
-- **New Nav Tabs** — Dashboard (default), CVEs, Plugins (7 tabs total)
-- **API Extensions** — 4 new CVE scheduler endpoints, plugin run endpoint
-
-### Long-Term Memory (RAG)
-- `memory_store.json` stores sessions, findings, targets, credentials
-- Before each AI chat, relevant past sessions are queried via keyword matching
-- AI sees "Previous session memory" in system context
-- Targets discovered in past sessions are remembered
-- Helps avoid re-scanning the same targets
-
-### Auto-Heal
-- `executor.ensure_tool(tool_name)` — auto-detect missing tools
-- Supports apt (Linux), pip (Python tools), brew (macOS)
-- Hooked into `executor.run()` — installs missing tools before execution
-- Uses direct subprocess for tool checks (no recursion)
-
-### Post-Exploitation Automation (V1)
-- `core/post_exploit.py` — 26 modules across 4 categories
-- **Privilege Escalation**: LinPEAS, sudo check, kernel exploit, SUID bins, cron jobs, Windows privcheck
-- **Persistence**: SSH key, cron, systemd service, Windows scheduled task, registry run key
-- **Lateral Movement**: SMB scan, PsExec, SSH pivot, WinRM, ARP discovery, port forwarding
-- **Data Exfiltration**: Hash dump, SAM dump, browser creds, SSH keys, config files, DB dump
-- Integrated into assistant system prompt for AI-aware post-exploit suggestions
-
-### Smart Payload Generator (V1)
-- `core/payload_generator.py` — 12 shell types, 4 encoding methods, obfuscation
-- **Shell types**: bash, python, perl, php, ruby, nc, ncat, powershell, java, nodejs, golang, lua
-- **Encodings**: base64, base64_url, hex, URL encoding
-- **Meterpreter**: msfvenom commands for elf, exe, py, php, aspx, war, jar
-- **Obfuscation**: variable-based, base64-encoded payloads
-- API endpoints: `/api/payload/generate`, `/api/payload/generate-all`, `/api/payload/meterpreter`
-
-### Compliance Mapping (V1)
-- `core/compliance_mapper.py` — maps findings to 4 compliance frameworks
-- **OWASP Top 10 2021**: All 10 categories with keyword matching
-- **MITRE ATT&CK**: 15 techniques across Initial Access, Execution, Persistence, Lateral Movement, etc.
-- **NIST CSF**: 8 categories (PR.AC, PR.DS, PR.IP, PR.PT, DE.CM, DE.AE, RS.RP, RC.RP)
-- **PTES**: All 7 penetration testing phases
-- Auto-mapped in reports and system prompt context
-- API endpoints: `/api/compliance/map`, `/api/compliance/report`
-
-### Attack Timeline Builder (V1)
-- `core/attack_timeline.py` — automatic phase detection from commands
-- **10 phases**: reconnaissance, scanning, enumeration, vulnerability_analysis, exploitation, post_exploitation, lateral_movement, data_exfiltration, persistence, reporting
-- Auto-detects phase from command keywords
-- Extracts CVEs and open ports as findings
-- Export to JSON, format for prompt context
-- Integrated into reporter for compliance-aware reports
-
-### Network Discovery Automation (V1)
-- `core/network_discovery.py` — automated subnet scanning and adjacent network discovery
-- **15 discovery commands**: ARP scan, ping sweep, top ports, UDP, OS detection, vulnerability scripts, SMB, SNMP, MSSQL, RDP, SSH, subnets, DNS zone, subdomain enum
-- **Smart subnet calculation**: adjacent /24 networks from target IP
-- **Discovery plans**: basic (2 steps) or full (5+ steps)
-- Parses nmap output to extract discovered hosts
-- API endpoints: `/api/network-discovery/plan`, `/api/network-discovery/parse`
-
-### Smart Wordlist Generator (V1)
-- `core/wordlist_generator.py` — context-aware wordlist generation
-- **Target-based**: generates from company name, domain, year, seasons, months
-- **Username generation**: from first/last name, domain, common patterns
-- **Mutation engine**: leet speak, symbols, year suffixes, capitalization
-- **35+ common passwords**, **27 common usernames** built-in
-- Save to file, generate custom from base words
-- API endpoints: `/api/wordlist/generate`, `/api/wordlist/usernames`
-
-### Collaborative Sessions (V1)
-- `core/session_router.py` — shared findings across sessions
-- `share_finding(type, data)` — broadcast findings to all sessions
-- `get_shared_findings()` — retrieve shared targets, credentials, vulnerabilities
-- Persistent state in `collab_sessions.json`
-- Session user tracking with `set_user()`
-- API endpoints: `/api/sessions/{id}/share`, `/api/sessions/shared`, `/api/sessions/{id}/user`
-
-### Custom Report Templates (V1)
-- `templates/report_executive.html` — professional dark-theme executive report
-- Compliance section with OWASP/MITRE/NIST/PTES mapping
-- Attack timeline visualization
-- Severity bar chart, responsive grid layout
-- Print-friendly CSS with `@media print` styles
-- Integrated into reporter for auto-generation
-
-### GitHub Actions CI/CD (V1)
-- `.github/workflows/ci.yml` — automated testing pipeline
-- **Test matrix**: Python 3.10, 3.11, 3.12, 3.13
-- **Linting**: py_compile for all core modules
-- **Security scan**: Bandit static analysis
-- **Docker build**: image build and smoke test
-- **Coverage**: Codecov integration
-
-### Integration Tests (V1)
-- `tests/test_integration.py` — 51 new tests across 8 test classes
-- Tests for: PostExploitEngine, PayloadGenerator, ComplianceMapper, AttackTimeline, NetworkDiscovery, WordlistGenerator
-- Cross-module integration tests
-- Full pipeline test (brain → exploit → post-exploit → compliance → timeline)
-
-### CVE Scheduler Persistence (V1)
-- `core/cve_scheduler.py` — persistent state across restarts
-- Saves interval, run_count, last_run, errors to `scheduler_state.json`
-- Auto-loads state on initialization
-- Test isolation with setup/teardown cleanup
+## Key Design Decisions
+- **AI responds in plain TEXT** (not JSON) — extracted via ```bash blocks
+- **y/n before every command** — user controls execution
+- **-y flag** — auto-approve for power users
+- **Smart Fallback** — 4 deterministic phases when AI is down
+- **Ghost-style Arabic prompt** — AI must execute, not write code
+- **No pre-defined tool chains** — AI decides everything
+- **No web dashboard loaded** — CLI-only, server files preserved
 
 ## Pending / Future
-- Telegram Bot
-- Advanced multi-user collaborative session UI
-- Full API integration tests for WebSocket flow
+- Fix Kali DNS for OpenRouter connectivity
+- Telegram Bot integration
+- Multi-user collaborative sessions
+- Full API integration tests
