@@ -112,9 +112,9 @@ class KaliAssistant:
         if command:
             allowed, block_msg = self.safety.check_command(command)
             if not allowed:
-                return ("answer", {"content": f"\u26a0\ufe0f {block_msg}"})
+                return ("answer", {"content": f"⚠️ {block_msg}"})
 
-            reason_match = re.search(r'\u269a\ufe0f\s*(.*?):', ai_reply)
+            reason_match = re.search(r'⚡\s*(.*?):', ai_reply)
             reason = reason_match.group(1).strip() if reason_match else ""
 
             pending_data = {
@@ -184,10 +184,10 @@ class KaliAssistant:
             fallbacks = self.planner.get_fallback(command)
             if fallbacks:
                 return ("answer", {
-                    "content": f"\u26a0\ufe0f Command failed. Try: {', '.join(fallbacks[:3])}"
+                    "content": f"⚠️ Command failed. Try: {', '.join(fallbacks[:3])}"
                 })
 
-        reason_match = re.search(r'\u269a\ufe0f\s*(.*?):', ai_reply)
+        reason_match = re.search(r'⚡\s*(.*?):', ai_reply)
         reason = reason_match.group(1).strip() if reason_match else ""
 
         return ("command", {
@@ -210,7 +210,7 @@ class KaliAssistant:
 
         for line in text.split('\n'):
             line = line.strip()
-            if line.startswith('\u269a '):
+            if line.startswith('⚡ '):
                 cmd = line[2:].strip()
                 if cmd and is_direct_command(cmd):
                     return cmd
@@ -230,7 +230,7 @@ class KaliAssistant:
         """Smart fallback when AI unavailable."""
         if user_input != "continue":
             if not self._fallback.has_more() and not self._fallback.parse(user_input):
-                return ("answer", {"content": "\u26a0\ufe0f AI (OpenRouter) unreachable.\n"
+                return ("answer", {"content": "⚠️ AI (OpenRouter) unreachable.\n"
                     "Type a direct command, or fix internet:\n"
                     "  sudo sh -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'\n"
                     "  ping -c 1 openrouter.ai"})

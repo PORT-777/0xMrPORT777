@@ -2,10 +2,26 @@ import subprocess
 import os
 import signal
 import time
+import shlex
+import shutil
 from utils.config import get_config
 from utils.logger import get_logger
 
 log = get_logger("executor")
+
+_KNOWN_BINARIES = {
+    "nmap", "masscan", "rustscan", "nikto", "whatweb", "wpscan",
+    "gobuster", "dirb", "ffuf", "sqlmap", "hydra", "medusa",
+    "john", "hashcat", "msfconsole", "msfvenom", "searchsploit",
+    "theharvester", "sherlock", "holehe", "whois", "dnsrecon",
+    "dig", "nslookup", "tcpdump", "tshark", "netcat", "nc",
+    "curl", "wget", "python3", "python", "ping", "traceroute",
+    "ls", "whoami", "id", "ifconfig", "ip", "ss", "ps",
+    "df", "uname", "cat", "grep", "find", "apt", "apt-get",
+    "systemctl", "chmod", "mkdir", "touch", "rm", "cp", "mv",
+    "echo", "sudo", "docker", "ssh", "scp", "nuclei", "nslookup",
+    "wafw00f", "pip", "pip3", "gem", "npm",
+}
 
 
 class CommandExecutor:
@@ -14,6 +30,13 @@ class CommandExecutor:
         self.long_timeout = get_config("executor", "long_running_timeout") or 600
         self.history = []
 
+    def _command_to_args(self, command):
+        return shlex.split(command)
+
+    def _needs_shell(self, command):
+        operators = {"|", ";", "&", ">", "<", "$(", "`"}
+        return any(op in command for op in operators)
+
     def run(self, command):
         self.history.append(command)
 
@@ -21,8 +44,9 @@ class CommandExecutor:
             return self._run_windows(command)
 
         tool_hint = command.split()[0] if command.split() else ""
-        if tool_hint and not self._check_tool_raw(tool_hint) and self.ensure_tool(tool_hint):
-            log.info(f"Installed missing tool: {tool_hint}")
+        if tool_hint and tool_hint in _KNOWN_BINARIES:
+            if not shutil.which(tool_hint) and self.ensure_tool(tool_hint):
+                log.info(f"Installed missing tool: {tool_hint}")
 
         timeout = self.long_timeout if self._is_long_running(command) else self.default_timeout
 
@@ -30,13 +54,23 @@ class CommandExecutor:
             log.info(f"Executing: {command[:200]}")
             print(f"\n[>] Executing ({timeout}s timeout): {command[:200]}{'...' if len(command) > 200 else ''}")
 
-            result = subprocess.run(
-                command,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
+            if self._needs_shell(command):
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout
+                )
+            else:
+                args = self._command_to_args(command)
+                result = subprocess.run(
+                    args,
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout
+                )
 
             output = ""
             if result.stdout:
@@ -68,9 +102,10 @@ class CommandExecutor:
             log.info(f"Executing (live): {command[:200]}")
             print(f"\n[>] Executing (live): {command[:200]}")
 
+            args = self._command_to_args(command)
             process = subprocess.Popen(
-                command,
-                shell=True,
+                args,
+                shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True
@@ -91,14 +126,7 @@ class CommandExecutor:
             return f"[-] Error: {str(e)}"
 
     def _check_tool_raw(self, tool_name):
-        try:
-            result = subprocess.run(
-                f"command -v {tool_name} 2>/dev/null",
-                shell=True, capture_output=True, text=True, timeout=5
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
+        return shutil.which(tool_name) is not None
 
     def check_tool(self, tool_name):
         return self._check_tool_raw(tool_name)
@@ -112,22 +140,36 @@ class CommandExecutor:
 
     def install_tool(self, tool_name):
         python_tools = ["requests", "beautifulsoup4", "python-nmap", "colorama", "rich"]
-        if tool_name in python_tools:
-            result = self.run(f"pip install {tool_name} 2>&1")
-        elif os.path.exists("/usr/bin/apt"):
-            result = self.run(f"apt-get install -y {tool_name} 2>&1")
-        elif os.path.exists("/opt/homebrew/bin/brew") or os.path.exists("/usr/local/bin/brew"):
-            result = self.run(f"brew install {tool_name} 2>&1")
-        else:
-            log.warning(f"Cannot auto-install {tool_name}: no package manager found")
+        try:
+            if tool_name in python_tools:
+                result = subprocess.run(
+                    ["pip", "install", tool_name],
+                    capture_output=True, text=True, timeout=120
+                )
+            elif os.path.exists("/usr/bin/apt"):
+                result = subprocess.run(
+                    ["apt-get", "install", "-y", tool_name],
+                    capture_output=True, text=True, timeout=300
+                )
+            elif os.path.exists("/opt/homebrew/bin/brew") or os.path.exists("/usr/local/bin/brew"):
+                result = subprocess.run(
+                    ["brew", "install", tool_name],
+                    capture_output=True, text=True, timeout=300
+                )
+            else:
+                log.warning(f"Cannot auto-install {tool_name}: no package manager found")
+                return False
+            output = (result.stdout + result.stderr).lower()
+            success = result.returncode == 0
+            if success:
+                print(f"[+] {tool_name} installed")
+                log.info(f"Installed {tool_name}")
+            else:
+                print(f"[-] Failed to install {tool_name}")
+            return success
+        except Exception as e:
+            log.error(f"Install error for {tool_name}: {e}")
             return False
-        success = "error" not in result.lower() or "already" in result.lower()
-        if success:
-            print(f"[+] {tool_name} installed")
-            log.info(f"Installed {tool_name}")
-        else:
-            print(f"[-] Failed to install {tool_name}")
-        return success
 
     def _is_long_running(self, command):
         cmd_lower = command.lower()

@@ -1,6 +1,7 @@
 import subprocess
 import threading
 import os
+import shlex
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.config import get_config
 from utils.logger import get_logger
@@ -46,9 +47,10 @@ class ParallelExecutor:
     def _run_one(self, command: str) -> str:
         timeout = get_config("executor", "long_running_timeout") if self._is_long_running(command) else (get_config("executor", "default_timeout") or 120)
         try:
+            args = shlex.split(command)
             result = subprocess.run(
-                command,
-                shell=True,
+                args,
+                shell=False,
                 capture_output=True,
                 text=True,
                 timeout=timeout

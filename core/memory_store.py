@@ -2,7 +2,6 @@ import json
 import re
 from pathlib import Path
 from datetime import datetime
-from collections import Counter
 from utils.logger import get_logger
 
 log = get_logger("memory_store")

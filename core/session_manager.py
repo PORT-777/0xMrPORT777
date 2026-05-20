@@ -1,6 +1,5 @@
 import os
 import json
-import glob
 from datetime import datetime
 from pathlib import Path
 from utils.config import get_config

@@ -35,7 +35,7 @@ def chat_sync(message, session_id=None):
 def confirm_and_execute(decision, session_id=None):
     asst, sid = get_or_create_assistant(session_id)
     try:
-        resp_type, data = asst.confirm_and_execute(decision)
+        resp_type, data = asst.execute_from_pending(decision)
     except Exception as e:
         log.error(f"confirm error: {e}")
         return {"type": "answer", "content": f"Error: {str(e)}"}, sid
@@ -48,13 +48,10 @@ def confirm_and_execute(decision, session_id=None):
 def _format_response(resp_type, data):
     if resp_type == "answer":
         return {"type": "answer", "content": data["content"]}
-    elif resp_type == "command":
-        pending = data.get("pending_approval", False)
+    elif resp_type in ("command", "pending"):
         cmd = data.get("command", "")
         reason = data.get("reason", "")
         output = data.get("output", "")
-        if pending:
-            return {"type": "command_pending", "command": cmd, "reason": reason, "decision": data.get("decision")}
         return {"type": "command_done", "command": cmd, "reason": reason, "output": output[:500]}
     elif resp_type == "summary":
         return {"type": "done", "content": data["summary"]}

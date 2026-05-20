@@ -201,7 +201,7 @@ def slash_command(cmd, args, assistant=None):
             "[bold]TikTok:[/bold] https://www.tiktok.com/@i_c.n1\n"
             "[bold]Telegram Channel:[/bold] https://t.me/f_c_o_6\n\n"
             "[dim]Open-source AI penetration testing assistant.[/dim]",
-            title="\u2139 About", box=box_style()
+            title="ℹ About", box=box_style()
         ))
         return True
 
@@ -241,7 +241,7 @@ def slash_command(cmd, args, assistant=None):
             return True
         console.print(f"[bold]Plugins ({len(plugins)}):[/bold]")
         for p in plugins:
-            console.print(f"  {p['category']}/{p['name']} v{p['version']} \u2014 {p['description']}")
+            console.print(f"  {p['category']}/{p['name']} v{p['version']} — {p['description']}")
         return True
 
     if cmd == "cve":
@@ -253,7 +253,7 @@ def slash_command(cmd, args, assistant=None):
             cves = updater.fetch_recent()
             console.print(f"[green]Fetched {len(cves)} CVEs.[/green]")
             for c in cves[:10]:
-                console.print(f"  [{c['severity'].upper()}] {c['cve']} \u2014 {c['desc'][:80]}")
+                console.print(f"  [{c['severity'].upper()}] {c['cve']} — {c['desc'][:80]}")
         elif action == "stats":
             stats = updater.get_stats()
             console.print(f"[bold]CVE Cache:[/bold] {stats['total']} entries")
@@ -322,7 +322,7 @@ def main():
                 console.print("[yellow]Hunting paused. Type anything to resume or /exit to quit.[/yellow]")
                 hunting = False
                 continue
-            console.print("[yellow]Peace. \u270c[/yellow]")
+            console.print("[yellow]Peace. ✌[/yellow]")
             break
 
         if not user_input or not user_input.strip():
@@ -336,7 +336,7 @@ def main():
             cmd = parts[0].lower()
             args = parts[1].split() if len(parts) > 1 else []
             if cmd in ("exit", "quit", "bye"):
-                console.print("[yellow]Peace. \u270c[/yellow]")
+                console.print("[yellow]Peace. ✌[/yellow]")
                 break
             slash_command(cmd, args, assistant)
             continue
@@ -410,7 +410,7 @@ def main():
                         console.print(f"[bold green]PORT-777[/bold green] {data.get('content', '')[:800]}")
                         break
                     elif resp_type == "summary":
-                        console.print(f"[bold green]\u2713 {data['summary']}[/bold green]")
+                        console.print(f"[bold green]✓ {data['summary']}[/bold green]")
                         hunting = False
                         break
                 else:
@@ -423,7 +423,7 @@ def main():
                     continue
 
             elif resp_type == "summary":
-                console.print(f"[bold green]\u2713 {data['summary']}[/bold green]")
+                console.print(f"[bold green]✓ {data['summary']}[/bold green]")
                 console.print("[dim]Objective complete. Type something new to start again.[/dim]")
                 hunting = False
                 break

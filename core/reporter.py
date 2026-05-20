@@ -82,8 +82,6 @@ class ReportGenerator:
             log.warning(f"PDF generation failed: {e}")
             return None
 
-        return files_created
-
     def _extract_findings(self, commands):
         findings = []
         for cmd in commands:

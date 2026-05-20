@@ -11,11 +11,12 @@ plugin = Plugin(
 
 def run(target, **kwargs):
     import subprocess
+    import shlex
     timeout = kwargs.get("timeout", 300)
     ports = kwargs.get("ports", "-p-")
     cmd = f"nmap -sV -sC -O {ports} {target}"
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(shlex.split(cmd), shell=False, capture_output=True, text=True, timeout=timeout)
         return {
             "status": "success" if result.returncode == 0 else "error",
             "command": cmd,
